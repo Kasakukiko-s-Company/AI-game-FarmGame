@@ -35,7 +35,7 @@
 | Cocos Creator | 已安装并验签 | `3.8.8`，`C:\ProgramData\cocos\editors\Creator\3.8.8\CocosCreator.exe` |
 | 微信开发者工具 | 已安装并验签 | 稳定版 `2.01.2510290`，`D:\lzq\微信小程序开发工具\微信web开发者工具\微信开发者工具.exe` |
 | Tiled | 已安装并验签 | `1.12.2`，`D:\lzq\Tiled\tiled.exe` |
-| Git 仓库 | 已初始化 | `main` 分支；`origin` 为 `git@github.com:kasakukiko/AI-game-FarmGame.git`；阶段 1 基线 `9108c8e`、阶段 2 基线 `cbbfa29`、阶段 3A 基线 `7cfb514` 均已推送 |
+| Git 仓库 | 已初始化 | `main` 分支；`origin` 为 `git@github.com:kasakukiko/AI-game-FarmGame.git`；阶段 1 基线 `9108c8e`、阶段 2 基线 `cbbfa29`、阶段 3A 基线 `7cfb514`、阶段 3B 基线 `39beb78` 均已推送 |
 
 四个 GUI 工具的可执行文件均存在且 Authenticode 签名有效。用户报告安装和首次启动没有错误或警告。
 
