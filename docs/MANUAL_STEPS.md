@@ -8,7 +8,59 @@
 
 阶段 2 已完成。代码、自动化测试、Cocos Creator 3.8.8 脚本导入、组件绑定和浏览器预览均已通过验收。
 
-阶段 3 已开始，目前只执行“Tiled 导入冒烟测试”。TMX 和原创占位纹理已由 Tiled/项目工具生成并被 Creator 导入；等待以下纹理设置、场景绑定和预览验收。
+阶段 3A 和阶段 3B 均已完成。阶段 3B 的阻挡地图、碰撞规则、Creator 组件绑定和浏览器预览已经通过验收。
+
+## 阶段 3B：最小阻挡层与角色碰撞（已完成）
+
+本节只验证一列石墙的阻挡和滑墙，不添加摄像机跟随、房屋、农田或其他地图装饰。
+
+### A. 刷新并确认资源导入
+
+1. 停止浏览器预览，回到 Cocos Creator 3.8.8。
+2. 在左下角资源管理器点击右上角圆形 **刷新** 按钮，等待脚本编译和 TMX 重导入完成。
+3. 展开 `assets/maps`，确认出现 `mvp_farm_stone`；展开 `assets/scripts/world`，确认出现 `GridCollision` 和 `TiledCollisionBridge`。
+4. 不要手动创建或编辑这些资源的 `.meta`；它们必须由 Creator 3.8.8 生成。
+5. 展开 Hierarchy 中的 `World`，预期看到 `Ground`、`Obstacles` 和灰色/未激活的 `Blocking`。场景中应在 Player 右侧看到一列 4 格石墙。
+6. 如果 `World` 仍只有旧的 `Ground`，先选中 `World`，把资源管理器中的 `mvp_farm` 再拖到 `cc.TiledMap → Tmx Asset` 原槽位，等待图层重建。
+7. 确认 Console 没有新红色错误。
+
+### B. 给 Player 绑定碰撞桥
+
+1. 在 Hierarchy 中选中 `Player`。
+2. 滚动到右侧 Inspector 底部，点击 **添加组件**，搜索并添加 `TiledCollisionBridge`。
+3. 在新组件中找到空的 **Tiled Map** 属性槽，从 Hierarchy 把 `World` 节点拖入该槽；槽内应显示 `World` 上的 `TiledMap` 组件，而不是 `None`。
+4. 保持 **Blocking Layer Name** 为 `Blocking`，大小写必须完全一致。
+5. 检查同节点的 `PlayerController`：`Collision Half Width = 8`、`Collision Half Height = 11`，`Move Speed = 96`。
+6. 同一个 Player 只保留一个 `TiledCollisionBridge`；按 `Ctrl+S` 保存场景。
+
+### C. 浏览器预览验收
+
+1. 清空 Console，点击顶部三角形预览按钮，再点击一次游戏画面让键盘获得焦点。
+2. 出生点右侧约 3 格处应显示一列竖直石墙。
+3. 持续按 `D` 向右移动：Player 应停在石墙左边，不能进入或穿过石墙。
+4. 在贴住石墙时同时按 `D+W` 或 `D+S`：横向应继续受阻，Player 应能沿石墙向上或向下滑动。
+5. 按 `A` 离开石墙后，再测试 WASD 和方向键，确认普通移动恢复正常。
+6. 返回 Creator，确认红色错误计数为 0，也没有反复出现 `[TiledCollisionBridge] Assign a TiledMap...` 警告。
+7. 回复 Codex：
+
+```text
+新资源和脚本导入：成功/失败
+World 图层：Ground、Obstacles、Blocking 均存在/缺少内容
+Tiled Map 属性绑定：成功/失败
+正面撞墙：无法穿过/仍能穿过
+斜向贴墙：可以滑动/无法滑动/仍会穿过
+离墙后普通移动：正常/异常
+Console 新错误或重复警告：无/完整内容
+```
+
+### D. 验收记录
+
+- 验收日期：2026-07-14。
+- 新石墙资源、`GridCollision`、`TiledCollisionBridge` 和三层 TMX 均由 Creator 3.8.8 成功导入。
+- `Main.scene/Canvas/Player` 已保存 `TiledCollisionBridge`；`Tiled Map` 指向 `World` 的 `cc.TiledMap`，图层名为 `Blocking`。
+- 浏览器预览中正面撞墙无法穿过，斜向贴墙可以沿墙滑动，离开石墙后 WASD/方向键移动正常。
+- Console 没有新红色错误或重复缺失绑定警告。
+- 本阶段仍未实现摄像机跟随；地图外边界由自动化测试覆盖，但因当前相机固定未列入本次人工观察项。
 
 ## 阶段 3A：Tiled 导入冒烟测试（已完成）
 

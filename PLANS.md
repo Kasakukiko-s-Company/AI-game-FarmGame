@@ -158,7 +158,7 @@ references/
 
 ## 阶段 3：Tiled 地图与碰撞
 
-状态：`[~]`，第一个子任务“Tiled 导入冒烟测试”已完成；尚未开始阻挡、碰撞和摄像机跟随。
+状态：`[~]`，阶段 3A“Tiled 导入冒烟测试”和阶段 3B“最小阻挡层与角色碰撞”均已完成；摄像机跟随尚未开始。
 
 范围：使用 32×32 像素瓦片制作 30×30 农场、10×10 可耕作区、不可进入的房屋外观、屋外睡觉交互点、阻挡层和摄像机跟随。地图与图块必须原创或有明确授权。
 
@@ -179,6 +179,25 @@ references/
 - 640×360 浏览器预览显示草地图覆盖视口，Player 位于地图上方且移动正常，Creator Console 没有新红色错误。
 
 下一子任务才会逐步加入阻挡层与碰撞；当前验收完成不代表阶段 3 整体完成。
+
+### 阶段 3B：最小阻挡层与角色碰撞（已完成）
+
+2026-07-14 已完成的自动部分：
+
+- 项目生成器新增原创 `32×32` 石墙占位图块，并由 Tiled 1.12.2 实际导出可见 `Obstacles` 和不可见 `Blocking` 图层；出生点右侧放置一列 4 格石墙用于验收。
+- 新增纯 TypeScript 网格碰撞规则：地图外视为阻挡，AABB 分轴解析支持沿墙滑动，扫掠子步避免大帧位移穿墙。
+- `TiledCollisionBridge` 负责把 Tiled 顶部原点行号、地图中心锚点和 Cocos 世界坐标转换后注入 `PlayerController`；核心规则不依赖 Cocos、`wx` 或浏览器 API。
+- world 测试覆盖有限地图边界、占用瓦片、斜向滑墙、防穿透、Tiled 行号转换和三层 TMX 结构。
+- Creator 3.8.8 已为石墙 PNG、`GridCollision` 和 `TiledCollisionBridge` 生成 `.meta`，importer 分别为 `image` 和 `typescript`，均标记为 imported。
+
+2026-07-14 Creator 人工验收记录：
+
+- `Main.scene` 已由 Creator 保存 `Ground`、`Obstacles` 和未激活 `Blocking` 三个 Tiled 子图层。
+- `Player` 已绑定 `TiledCollisionBridge`，其 `Tiled Map` 指向 `World` 上的实际 `cc.TiledMap`，图层名为 `Blocking`；碰撞半宽/半高保持 `8/11`。
+- 浏览器预览中 Player 正面无法穿过 4 格石墙，斜向贴墙可以滑动，离墙后普通移动正常。
+- Creator Console 没有新红色错误或重复缺失绑定警告。
+
+阶段 3B 已完成；下一子任务才处理摄像机跟随，当前不加入房屋、可耕作区或其他玩法。
 
 ## 阶段 4：瓦片坐标与交互检测
 

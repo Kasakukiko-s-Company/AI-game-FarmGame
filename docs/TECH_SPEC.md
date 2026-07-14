@@ -137,6 +137,16 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 - Cocos 3.8.8 本地解析源码已确认支持 CSV；冒烟测试不使用无限地图、复杂对象模板、脚本或图块动画。
 - Creator 导入、场景绑定和 640×360 浏览器预览已经通过，未观察到图块接缝；后续子任务才逐步加入阻挡、房屋、可耕作区、睡觉点、碰撞与摄像机。
 
+## Grid Collision Slice
+
+阶段 3B 使用一条小而完整的阻挡切片：
+
+- Tiled 的 `Obstacles` 图层负责可见石墙，隐藏 `Blocking` 图层以非零 GID 表示不可通行瓦片；两层坐标必须一致。
+- `GridCollision` 使用底部原点的整数瓦片坐标，地图范围外始终视为阻挡；Tiled 顶部原点行号只在适配层转换。
+- 玩家使用轴对齐包围盒、先 X 后 Y 的分轴解析，允许斜向输入沿墙滑动；位移按不超过半个瓦片的子步扫掠并在接触处二分，避免大帧穿墙。
+- `PlayerController` 只依赖 `IPlayerCollisionService`，`TiledCollisionBridge` 才访问 Cocos `TiledMap`、节点变换和 `Blocking` 图层。
+- 当前地图和 World 保持位置 `(0, 0, 0)`、缩放 `(1, 1, 1)`；旋转或非等比缩放不属于本阶段支持范围。
+
 ## Farming Rules
 
 建议地块状态：

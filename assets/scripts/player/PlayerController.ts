@@ -3,9 +3,24 @@ import type { IInputService } from '../platform/PlatformContracts';
 import {
   calculatePlayerMovement,
   FacingDirection,
+  type MovementVector,
 } from './PlayerMovement';
 
 const { ccclass, property } = _decorator;
+
+export interface PlayerColliderBounds {
+  readonly halfWidth: number;
+  readonly halfHeight: number;
+}
+
+/** Seam implemented by world adapters so movement rules do not depend on Tiled or Cocos physics. */
+export interface IPlayerCollisionService {
+  resolveMovement(
+    startWorld: MovementVector,
+    requestedWorld: MovementVector,
+    bounds: PlayerColliderBounds,
+  ): MovementVector;
+}
 
 /** Applies semantic movement input to a node without listening to physical controls. */
 @ccclass('PlayerController')
@@ -13,7 +28,14 @@ export class PlayerController extends Component {
   @property({ min: 1, step: 1, tooltip: 'Movement speed in logical pixels per second.' })
   public moveSpeed = 96;
 
+  @property({ min: 1, step: 1, tooltip: 'Horizontal half-size of the player collision box.' })
+  public collisionHalfWidth = 8;
+
+  @property({ min: 1, step: 1, tooltip: 'Vertical half-size of the player collision box.' })
+  public collisionHalfHeight = 11;
+
   private inputService: IInputService | null = null;
+  private collisionService: IPlayerCollisionService | null = null;
   private currentFacing: FacingDirection = 'down';
 
   public get facing(): FacingDirection {
@@ -27,6 +49,16 @@ export class PlayerController extends Component {
   public clearInputService(inputService: IInputService): void {
     if (this.inputService === inputService) {
       this.inputService = null;
+    }
+  }
+
+  public setCollisionService(collisionService: IPlayerCollisionService): void {
+    this.collisionService = collisionService;
+  }
+
+  public clearCollisionService(collisionService: IPlayerCollisionService): void {
+    if (this.collisionService === collisionService) {
+      this.collisionService = null;
     }
   }
 
@@ -49,10 +81,23 @@ export class PlayerController extends Component {
       return;
     }
 
-    const position = this.node.position;
-    this.node.setPosition(
-      position.x + step.displacement.x,
-      position.y + step.displacement.y,
+    const position = this.node.worldPosition;
+    const displacement = this.collisionService?.resolveMovement(
+      { x: position.x, y: position.y },
+      step.displacement,
+      {
+        halfWidth: this.collisionHalfWidth,
+        halfHeight: this.collisionHalfHeight,
+      },
+    ) ?? step.displacement;
+
+    if (displacement.x === 0 && displacement.y === 0) {
+      return;
+    }
+
+    this.node.setWorldPosition(
+      position.x + displacement.x,
+      position.y + displacement.y,
       position.z,
     );
   }
