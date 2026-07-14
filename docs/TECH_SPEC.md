@@ -90,6 +90,7 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 
 - `PlayerMovement` 是无 Cocos 依赖的纯规则，负责输入归一化、速度、位移和最后朝向。
 - 键盘桥支持 WASD 与方向键；同时按两个方向时规则把向量限制在单位圆内，不产生斜向加速。
+- Creator 浏览器预览运行中改变画布尺寸可能丢失原尺寸中的 `KEY_UP`；键盘桥监听引擎 `canvas-resize` 事件并清空旧按键集合，避免切换后持续移动。
 - `TouchInputPort` 是后续虚拟摇杆写入语义移动向量的入口，本阶段不实现触控 UI。
 - `PlayerController` 只消费接口并移动节点，不监听物理按键。
 - `PlayerPlaceholderView` 只负责 Graphics 占位表现和朝向标记，不拥有移动规则。
@@ -146,6 +147,16 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 - 玩家使用轴对齐包围盒、先 X 后 Y 的分轴解析，允许斜向输入沿墙滑动；位移按不超过半个瓦片的子步扫掠并在接触处二分，避免大帧穿墙。
 - `PlayerController` 只依赖 `IPlayerCollisionService`，`TiledCollisionBridge` 才访问 Cocos `TiledMap`、节点变换和 `Blocking` 图层。
 - 当前地图和 World 保持位置 `(0, 0, 0)`、缩放 `(1, 1, 1)`；旋转或非等比缩放不属于本阶段支持范围。
+
+## Bounded Camera Follow Slice
+
+阶段 3C 只实现即时跟随和有限地图夹取：
+
+- `CameraBounds` 是无 Cocos 依赖的纯规则；目标位于安全范围内时相机中心跟随目标，接近边界时夹取到“地图边缘减去半个视口”。
+- 某个地图轴小于当前视口时，该轴固定显示地图中心；地图外留白在这种情况下不可避免，但行为保持对称和确定。
+- `BoundedCameraFollow` 在 `lateUpdate` 执行，确保 Player 当帧移动完成后再更新 Camera，不引入平滑延迟或每平台差异参数。
+- Canvas 可能在 resize 时修改正交高度，因此每帧读取 `Camera.orthoHeight` 和底层 camera aspect；禁止硬编码设计分辨率作为实际视口。
+- 地图四角经 `UITransform.convertToWorldSpaceAR` 转换后计算世界 AABB，支持当前 Canvas 世界偏移；非轴对齐地图只按其世界 AABB 约束。
 
 ## Farming Rules
 

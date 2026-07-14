@@ -43,7 +43,7 @@ Get-ChildItem -LiteralPath 'assets\data' -Filter '*.json' | ForEach-Object {
 
 ## 自动化测试
 
-当前纯移动和网格碰撞规则使用 Node.js 24 内置测试运行器，不需要下载第三方测试框架。在 PowerShell 中使用 `npm.cmd`，避免本机执行策略拦截 `npm.ps1`：
+当前纯移动、网格碰撞和相机边界规则使用 Node.js 24 内置测试运行器，不需要下载第三方测试框架。在 PowerShell 中使用 `npm.cmd`，避免本机执行策略拦截 `npm.ps1`：
 
 ```powershell
 npm.cmd test
@@ -55,13 +55,19 @@ npm.cmd test
 npm.cmd run test:player
 ```
 
+只运行平台输入生命周期测试：
+
+```powershell
+npm.cmd run test:platform
+```
+
 只运行 world 网格碰撞与 Tiled 地图结构测试：
 
 ```powershell
 npm.cmd run test:world
 ```
 
-测试位于 `tests/player` 和 `tests/world`，不进入 Cocos 资源数据库；`tsconfig.json` 只包含 `assets/**/*.ts`，项目脚本仍由 Creator 自带 TypeScript 严格检查。
+测试位于 `tests/player`、`tests/platform` 和 `tests/world`，不进入 Cocos 资源数据库；`tsconfig.json` 只包含 `assets/**/*.ts`，项目脚本仍由 Creator 自带 TypeScript 严格检查。
 
 ## 模块边界
 
@@ -70,7 +76,7 @@ npm.cmd run test:world
 - `platform`：平台接口与适配器，不包含游戏规则。
 - `farming`、`inventory`、`ui`：仅建立目录，等待对应垂直切片，不提前填充空架构。
 - `player`：阶段 2 已实现纯移动规则、节点控制器和原创几何占位视图；阶段 3B 只通过接口接受 world 碰撞约束，不直接查询 Tiled。
-- `world`：阶段 3A 已完成 Tiled 导入链路；阶段 3B 的纯网格碰撞规则、`TiledCollisionBridge`、Creator 场景绑定和浏览器预览均已完成。
+- `world`：阶段 3A 已完成 Tiled 导入链路；阶段 3B 已完成网格碰撞；阶段 3C 已完成纯相机边界规则、`BoundedCameraFollow` 和尺寸切换回归验收。
 
 核心模块不得直接访问 `wx`、`window` 或 `localStorage`。场景、资源 `.meta`、项目设置和组件绑定必须由 Cocos Creator 3.8.8 生成。
 
@@ -105,5 +111,6 @@ $process.ExitCode
 - 阶段 2 的移动切片已通过编辑器导入、组件绑定和预览验收；基线提交 `cbbfa29` 已推送到 `origin/main`。
 - 阶段 3A 的 Tiled 冒烟测试已完成 Creator 场景绑定和浏览器预览验收；基线提交 `7cfb514` 已推送到 `origin/main`。
 - 阶段 3B 的阻挡地图与碰撞代码已完成 Creator 组件绑定和浏览器预览验收；基线提交 `39beb78` 已推送到 `origin/main`。
+- 阶段 3C 的有界摄像机跟随当前保持为未提交工作区改动；Creator 资源导入、组件绑定、浏览器预览和尺寸切换输入修复均已完成验收，等待用户确认是否创建并推送基线提交。
 
 不要提交 AppSecret、登录凭据、二维码、`.env`、构建缓存或来源不明素材。

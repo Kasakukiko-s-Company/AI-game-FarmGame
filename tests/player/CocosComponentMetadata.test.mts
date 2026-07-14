@@ -6,6 +6,7 @@ const COMPONENT_URLS = [
   new URL('../../assets/scripts/player/PlayerPlaceholderView.ts', import.meta.url),
   new URL('../../assets/scripts/platform/KeyboardInputBridge.ts', import.meta.url),
   new URL('../../assets/scripts/world/TiledCollisionBridge.ts', import.meta.url),
+  new URL('../../assets/scripts/world/BoundedCameraFollow.ts', import.meta.url),
 ] as const;
 
 test('keeps Creator 3.8.8 requireComponent metadata callable', async () => {

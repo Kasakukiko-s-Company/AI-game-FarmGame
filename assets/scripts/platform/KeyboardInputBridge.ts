@@ -5,6 +5,7 @@ import {
   input,
   Input,
   KeyCode,
+  view,
 } from 'cc';
 import { PlayerController } from '../player/PlayerController';
 import type { IInputService, InputSnapshot } from './PlatformContracts';
@@ -24,12 +25,14 @@ export class KeyboardInputBridge extends Component implements IInputService {
     this.controller?.setInputService(this);
     input.on(Input.EventType.KEY_DOWN, this.onKeyDown, this);
     input.on(Input.EventType.KEY_UP, this.onKeyUp, this);
+    view.on('canvas-resize', this.resetHeldKeys, this);
   }
 
   protected override onDisable(): void {
     input.off(Input.EventType.KEY_DOWN, this.onKeyDown, this);
     input.off(Input.EventType.KEY_UP, this.onKeyUp, this);
-    this.heldKeys.clear();
+    view.off('canvas-resize', this.resetHeldKeys, this);
+    this.resetHeldKeys();
     this.controller?.clearInputService(this);
     this.controller = null;
   }
@@ -55,6 +58,11 @@ export class KeyboardInputBridge extends Component implements IInputService {
 
   private readonly onKeyUp = (event: EventKeyboard): void => {
     this.heldKeys.delete(event.keyCode);
+  };
+
+  /** Prevents a lost key-up event from leaving movement stuck after a preview resize. */
+  private readonly resetHeldKeys = (): void => {
+    this.heldKeys.clear();
   };
 
   private isHeld(keyCode: KeyCode): boolean {
