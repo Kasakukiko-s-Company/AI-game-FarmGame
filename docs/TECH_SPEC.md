@@ -123,7 +123,8 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 明确区分：
 
 - 世界坐标：Cocos 场景中的位置。
-- 屏幕/UI 坐标：触控和 UI 使用的位置。
+- 游戏屏幕坐标：`EventTouch/EventMouse.getLocation()` 返回的左下角原点原始窗口位置，供 Camera 投影使用。
+- UI 坐标：`getUILocation()` 返回的适配后位置，供 UI 布局使用；不能再次传给 `Camera.screenToWorld()`。
 - 瓦片坐标：整数 `(x, y)`，用于农田、碰撞查询与存档。
 
 所有转换集中在 `world` 模块。地图原点、Y 轴方向、瓦片中心偏移和边界规则必须由测试固定，不能在各组件中重复计算。
@@ -157,6 +158,18 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 - 地图内整数瓦片必须同时位于配置矩形内且未被阻挡才返回 `true`；边界瓦片属于矩形内部。
 - `assets/data/maps.json` 的 `farmableArea` 是 MVP 可耕作范围的唯一内容配置；TMX 不再维护重复的 `Farmable` 图层。
 - 阶段 5 通过适配层提供真实 `Blocking` 查询并消费这个布尔结果；本切片不读取 JSON、不监听输入，也不执行锄地。
+
+## Screen-to-Tile Adapter Slice
+
+阶段 4D 把原始游戏屏幕指针坐标接到既有世界与瓦片规则，不引入平台专属输入：
+
+- `ScreenTileMapper` 是 Cocos seam 上的 adapter，interface 只有 `screenToTile(point)`；`GameScreenPoint` 明确要求调用方传入 `getLocation()` 的原始游戏屏幕坐标，不需要了解 Camera 视口、Canvas 缩放或 TiledMap 锚点。
+- `Camera.screenToWorld()` 处理实际视口、设备旋转与正交投影，再由 TiledMap `UITransform` 转为地图局部坐标；`getUILocation()` 已执行 UI 适配，禁止作为 mapper 输入。
+- 地图局部点最终交给阶段 4A `worldToTile`，因此地图外、负方向和最大边界继续返回 `null`，不会夹取到边缘格。
+- mapper 不监听 `MOUSE_UP` 或 `TOUCH_END`；开发期 `TileInteractionDebugView` 是当前 caller，并让两种物理事件共用同一个 interface。
+- 蓝色半透明框只证明屏幕定位，黄色框继续证明玩家朝向；两者都不修改游戏状态，也不代表可耕作或执行工具动作。
+- 当前只支持已经锁定的 2D 正交 Camera 和轴对齐、缩放为 1 的 World；真实微信设备触控仍须在后续微信构建阶段回归。
+- 阶段 4D 的 Creator 绑定、浏览器鼠标点击、相机移动后点击和另一横屏尺寸点击已验收；浏览器设备触控模拟未执行，不计入已通过项目。
 
 ## Tiled Import Smoke Baseline
 

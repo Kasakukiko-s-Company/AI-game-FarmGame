@@ -8,7 +8,67 @@
 
 阶段 2 已完成。代码、自动化测试、Cocos Creator 3.8.8 脚本导入、组件绑定和浏览器预览均已通过验收。
 
-阶段 3A、阶段 3B、阶段 3C、阶段 4A、阶段 4B 和阶段 4C 均已完成。当前不进入下一子任务，等待明确指令。
+阶段 3A、阶段 3B、阶段 3C 以及阶段 4A～4D 均已完成。阶段 4D 的 Creator 导入、场景绑定和浏览器鼠标预览已经验收；浏览器触控模拟未验证，真实微信设备触控留到微信构建阶段回归。
+
+## 阶段 4D：屏幕/触控坐标适配（已完成）
+
+本节只验证屏幕指针能正确映射到有限地图瓦片。蓝色框表示鼠标/触控所点瓦片，黄色框仍表示 Player 朝向目标；本节不执行锄地或修改农田状态。
+
+### A. 导入新组件
+
+1. 停止浏览器预览，回到 Cocos Creator 3.8.8。
+2. 在左下角资源管理器点击右上角圆形 **刷新** 按钮，等待脚本编译完成。
+3. 展开 `assets/scripts/world`，确认出现 `ScreenTileMapper`。
+4. 不要自行创建或编辑 `.meta`；由 Creator 3.8.8 自动生成。
+5. 选中 `assets/scripts/world/TileInteractionDebugView` 不需要做任何资源设置；刷新后它会多出一个可绑定属性。
+6. 确认底部 Console 没有新的红色编译错误。
+
+### B. 绑定现有 Camera 和调试视图
+
+1. 在 Hierarchy 中展开 `Canvas`，选中现有的 `Camera`；不要创建第二个 Camera 节点或第二个 `cc.Camera`。
+2. 滚动到 Inspector 底部，点击 **添加组件 / Add Component**，搜索并添加 `ScreenTileMapper`。
+3. 该节点原有 `cc.Camera` 和 `BoundedCameraFollow` 都应保留且继续启用。
+4. 在新组件的 **Tiled Map** 属性中，把 Hierarchy 的 `World` 节点拖入槽位；槽内应显示 World 上的 `TiledMap`。
+5. 在 Hierarchy 选中现有 `InteractionDebug` 节点。
+6. 找到原有 `TileInteractionDebugView`，确认 Target 仍为 `Player`、Tiled Map 仍为 `World`。
+7. 找到新增的 **Screen Tile Mapper** 槽位，把 Hierarchy 的 `Camera` 节点拖入；槽内应显示 Camera 上的 `ScreenTileMapper`。
+8. 保持 `InteractionDebug` 只有一个 `Graphics`；不要添加第二个 Graphics。
+9. 按 `Ctrl+S` 保存场景。
+
+### C. 浏览器预览验收
+
+1. 清空 Console，点击顶部三角形预览按钮。
+2. 黄色框应继续位于 Player 最后朝向的相邻一格；点击地图内任意草地，所点瓦片应出现一个蓝色半透明方框。
+3. 在同一瓦片的不同位置点击，蓝框应保持在同一格；跨过瓦片边界点击，蓝框应按整数瓦片跳到相邻格。
+4. 点击可见石墙格时蓝框允许覆盖石墙，因为阶段 4D 只定位屏幕瓦片，不判断可耕作性；Player 仍不能穿墙。
+5. 移动 Player 让相机明显跟随，再点击当前屏幕中的草地，蓝框必须出现在新相机位置下实际所点的瓦片，不能停留在旧屏幕映射。
+6. 在预览器切换到另一种横屏尺寸；如果使用 `OPPO Reno2 (360×800)`，先点击 **Rotate** 使实际视口成为 `800×360`。再次点击不同瓦片，蓝框仍应准确吸附。
+7. 如需验证真实触控事件，可打开浏览器开发者工具的设备模拟模式后轻触游戏画面；触控结束应与鼠标松开产生相同蓝框。若本轮不使用设备模拟，请在回报中写“触控模拟未验证”，不要写成功。
+8. 再回归 WASD、方向键、石墙碰撞、相机边界和黄色目标框。
+9. 返回 Creator，确认红色错误计数为 0，也没有重复出现 `[ScreenTileMapper] Add this component to Camera and assign Tiled Map.` 警告。
+10. 回复 Codex：
+
+```text
+ScreenTileMapper 导入：成功/失败
+Camera 上添加组件：成功/失败
+Tiled Map：World/未绑定
+InteractionDebug Mapper：Camera/未绑定
+鼠标点击蓝框：正常/异常
+移动相机后点击：正常/异常
+另一横屏尺寸点击：正常/异常
+触控模拟：正常/异常/未验证
+黄色目标框与现有回归：正常/异常
+Console 新错误或重复警告：无/完整内容
+```
+
+### D. 验收记录
+
+- 验收日期：2026-07-15。
+- Creator 3.8.8 已显示 `assets/scripts/world/ScreenTileMapper`；对应 `.meta` 由编辑器生成，importer 为 `typescript`、imported 为 `true`，UUID 为 `7063dbff-89be-48aa-9013-e148348327e0`。
+- 现有 Camera 已添加 `ScreenTileMapper`，Tiled Map=`World`；`InteractionDebug/TileInteractionDebugView` 的 Screen Tile Mapper=`Camera`，场景序列化引用检查通过。
+- 浏览器鼠标点击蓝框、移动相机后点击和另一横屏尺寸点击均正常；截图确认黄色朝向框正常，蓝框与黄色框重叠时覆盖黄色框属于绘制顺序的预期结果。
+- Creator Console 无新错误或重复警告；截图显示预览保持 60 FPS。
+- 浏览器设备触控模拟本轮未验证，因此不记录为通过；真实微信设备触控须在后续微信构建阶段回归。
 
 ## 阶段 4C：纯可耕作瓦片查询（已完成）
 

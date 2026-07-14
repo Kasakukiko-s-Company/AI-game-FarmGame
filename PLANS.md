@@ -223,7 +223,7 @@ references/
 
 ## 阶段 4：瓦片坐标与交互检测
 
-状态：`[~]`，阶段 4A“纯坐标与面向瓦片规则”、阶段 4B“场景交互目标调试框”和阶段 4C“纯可耕作瓦片查询”均已完成；屏幕坐标适配尚未开始。
+状态：`[x]`，阶段 4A“纯坐标与面向瓦片规则”、阶段 4B“场景交互目标调试框”、阶段 4C“纯可耕作瓦片查询”和阶段 4D“屏幕/触控坐标适配”均已完成。真实微信设备触控仍按平台验收边界留到微信构建阶段回归。
 
 范围：世界坐标、屏幕坐标和瓦片坐标转换；面向瓦片选择；交互距离；可耕作性查询。先写纯逻辑测试，再接场景表现。
 
@@ -285,6 +285,29 @@ references/
 - Creator Console 无新错误或重复警告；阶段 4C 验收通过。
 
 阶段 4C 已完成。下一子任务只在收到明确指令后开始；当前不进入锄地、农田状态或屏幕坐标适配。
+
+### 阶段 4D：屏幕/触控坐标适配（已完成）
+
+2026-07-14 已完成的自动部分：
+
+- 对照本机 Cocos Creator 3.8.8 事件分发与 Camera 源码确认：`Camera.screenToWorld()` 接收 `getLocation()` 的左下角原点原始游戏屏幕坐标，并负责实际视口、设备旋转和投影换算；已经过适配的 `getUILocation()` 不能再次传入 Camera。
+- 新增 `ScreenTileMapper` Creator adapter，只公开 `screenToTile(point)`；内部集中完成屏幕坐标、Camera 世界坐标、TiledMap 局部坐标和阶段 4A 有限瓦片网格的转换。
+- mapper 不监听输入、不执行交互动作，也不访问 `wx`、`window` 或 `localStorage`；未来 PC 鼠标和微信触控调用相同 interface。
+- 扩展开发期 `TileInteractionDebugView`：`MOUSE_UP` 和 `TOUCH_END` 共用 mapper，蓝色半透明框显示最近一次屏幕指针对应的瓦片；原黄色朝向框保持独立。
+- 指针位于地图外或坐标非有限值时返回 `null`；不把无效点击夹取到地图边缘。
+- Creator 组件元数据兼容测试已覆盖 `ScreenTileMapper`，继续禁止数组形式的 `@requireComponent`。
+- 本子任务不实现点击锄地、农田状态、触控摇杆或平台专属 API。
+
+2026-07-15 Creator 与浏览器验收：
+
+- Creator 3.8.8 已导入 `ScreenTileMapper.ts`，并生成 importer 为 `typescript`、状态为 imported 的 `.meta`。
+- `ScreenTileMapper` 已由编辑器添加到现有 Camera，Tiled Map=`World`；`InteractionDebug/TileInteractionDebugView` 的 Screen Tile Mapper 已绑定该 Camera 组件，场景序列化引用检查通过。
+- 浏览器预览确认鼠标点击蓝框正常；移动相机后和切换到另一横屏尺寸后仍能准确定位所点瓦片。
+- 截图确认黄色朝向框保持正常；蓝框与黄色框落在同一格时，由于蓝框后绘制而覆盖黄色框，属于预期表现。
+- Creator Console 无新错误或重复警告；预览截图保持 60 FPS。
+- 本轮没有执行浏览器设备触控模拟，因此不声称触控事件已通过；`TOUCH_END` 与鼠标共用 mapper 的代码已纳入类型和静态检查，真实微信设备触控留到微信构建阶段回归。
+
+阶段 4D 与阶段 4 均已完成。下一阶段只在收到明确指令后开始；当前不把指针点击连接到锄地命令。
 
 ## 阶段 5：耕地
 

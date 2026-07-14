@@ -7,6 +7,7 @@ const COMPONENT_URLS = [
   new URL('../../assets/scripts/platform/KeyboardInputBridge.ts', import.meta.url),
   new URL('../../assets/scripts/world/TiledCollisionBridge.ts', import.meta.url),
   new URL('../../assets/scripts/world/BoundedCameraFollow.ts', import.meta.url),
+  new URL('../../assets/scripts/world/ScreenTileMapper.ts', import.meta.url),
   new URL('../../assets/scripts/world/TileInteractionDebugView.ts', import.meta.url),
 ] as const;
 
