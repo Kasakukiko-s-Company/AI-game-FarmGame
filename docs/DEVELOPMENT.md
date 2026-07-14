@@ -1,0 +1,59 @@
+# Development Guide
+
+## 固定工具版本
+
+- Cocos Creator：`3.8.8`，`C:\ProgramData\cocos\editors\Creator\3.8.8\CocosCreator.exe`
+- Tiled：`1.12.2`，`D:\lzq\Tiled\tiled.exe`
+- 微信开发者工具：稳定版 `2.01.2510290`
+- 项目目录：`D:\lzq\AI游戏\FarmGame`
+
+MVP 期间不要让 Dashboard 升级或迁移 Creator 版本。当前没有微信小游戏 AppID，不阻塞编辑器与浏览器预览。
+
+## 打开项目
+
+在 Cocos Dashboard 中选择 Creator 3.8.8 并导入本目录，或在 PowerShell 中运行：
+
+```powershell
+& 'C:\ProgramData\cocos\editors\Creator\3.8.8\CocosCreator.exe' --project 'D:\lzq\AI游戏\FarmGame'
+```
+
+首次导入会生成 `library`、`temp`、`profiles` 等本机目录。它们已被 `.gitignore` 排除；`assets`、`.creator`、`settings`、`package.json` 和 `tsconfig.json` 必须纳入版本控制。
+
+## TypeScript 检查
+
+项目不额外安装 TypeScript，直接使用锁定编辑器自带的 5.8.2：
+
+```powershell
+node 'C:\ProgramData\cocos\editors\Creator\3.8.8\resources\app.asar.unpacked\node_modules\typescript\lib\tsc.js' -p tsconfig.json --noEmit
+```
+
+`tsconfig.json` 继承编辑器在 `temp/tsconfig.cocos.json` 生成的引擎配置，所以必须至少成功打开并导入一次项目后再运行。`skipLibCheck` 用于忽略 Cocos 自带声明文件的内部兼容诊断，不会关闭项目 TypeScript 文件的严格检查。
+
+## 数据检查
+
+初始化数据位于 `assets/data`。至少确认所有 JSON 可解析：
+
+```powershell
+Get-ChildItem -LiteralPath 'assets\data' -Filter '*.json' | ForEach-Object {
+  Get-Content -Raw -Encoding UTF8 -LiteralPath $_.FullName | ConvertFrom-Json | Out-Null
+}
+```
+
+跨文件规则由 `assets/scripts/data/GameDataValidator.ts` 表达；数据接入启动流程时必须在结构解码后调用它。当前地图基线是 30×30 瓦片、每格 32 像素、10×10 可耕作矩形。
+
+## 模块边界
+
+- `core/save`：版本化、平台无关的存档数据。
+- `data`：JSON 类型、结构解码后的跨文件校验。
+- `platform`：平台接口与适配器，不包含游戏规则。
+- `player`、`world`、`farming`、`inventory`、`ui`：仅建立目录，等待对应垂直切片，不提前填充空架构。
+
+核心模块不得直接访问 `wx`、`window` 或 `localStorage`。场景、资源 `.meta`、项目设置和组件绑定必须由 Cocos Creator 3.8.8 生成。
+
+## Git
+
+- 当前分支：`main`
+- 远程：`origin = git@github.com:kasakukiko/AI-game-FarmGame.git`
+- 工程初始化阶段不提交、不推送；待场景预览验收后再由用户决定是否创建首个提交。
+
+不要提交 AppSecret、登录凭据、二维码、`.env`、构建缓存或来源不明素材。

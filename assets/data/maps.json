@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "maps": [
+    {
+      "id": "mvp_farm",
+      "displayNameKey": "map.mvp_farm.name",
+      "widthTiles": 30,
+      "heightTiles": 30,
+      "tileSizePixels": 32,
+      "spawnTile": { "x": 15, "y": 18 },
+      "sleepTile": { "x": 15, "y": 22 },
+      "farmableArea": {
+        "min": { "x": 5, "y": 5 },
+        "max": { "x": 14, "y": 14 }
+      }
+    }
+  ]
+}

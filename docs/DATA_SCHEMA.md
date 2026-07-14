@@ -1,0 +1,197 @@
+# Data Schema
+
+本文件定义当前 JSON 契约。初始化数据已写入 `assets/data`，TypeScript 类型位于 `assets/scripts/data/GameDataTypes.ts`，跨文件不变量校验位于 `assets/scripts/data/GameDataValidator.ts`。数据尚未接入启动流程；接入时仍必须先解码未知输入，再运行结构和引用校验。
+
+## 通用规则
+
+- ID 使用稳定的英文 `snake_case`，发布后不因显示名称变化而修改。
+- 用户可见文本只存本地化键。
+- JSON 不包含注释、函数、引擎对象或平台路径。
+- 金额和计数使用整数。
+- 引用的 ID 必须在启动时验证存在。
+- 未知字段的处理策略由 `schemaVersion` 决定，不静默吞掉关键错误。
+
+## `items.json`
+
+```json
+{
+  "schemaVersion": 1,
+  "items": [
+    {
+      "id": "mistleaf_seed",
+      "displayNameKey": "item.mistleaf_seed.name",
+      "type": "seed",
+      "maxStack": 99,
+      "buyPrice": 20,
+      "sellPrice": 10,
+      "cropId": "mistleaf"
+    },
+    {
+      "id": "mistleaf",
+      "displayNameKey": "item.mistleaf.name",
+      "type": "crop",
+      "maxStack": 99,
+      "buyPrice": 0,
+      "sellPrice": 30
+    }
+  ]
+}
+```
+
+`buyPrice`/`sellPrice` 仅为未来兼容字段，MVP 不实现交易。`mistleaf`（雾叶草）已确认为 MVP 原创开发代号。
+
+当前类型：`tool | seed | crop | material`。锄头和水壶既在 `items.json` 中占背包槽，也通过稳定 `toolId` 引用 `tools.json` 的行为定义。
+
+## `crops.json`
+
+```json
+{
+  "schemaVersion": 1,
+  "crops": [
+    {
+      "id": "mistleaf",
+      "seedItemId": "mistleaf_seed",
+      "harvestItemId": "mistleaf",
+      "growthStages": [1, 1, 1],
+      "harvestQuantity": 1,
+      "requiresWater": true,
+      "allowedSeasons": ["all"]
+    }
+  ]
+}
+```
+
+`growthStages` 表示每个阶段需要的有效生长日，不在数据中存贴图路径；表现资源通过独立映射或 Cocos 资源引用管理。
+
+## `tools.json`
+
+```json
+{
+  "schemaVersion": 1,
+  "tools": [
+    {
+      "id": "hoe_basic",
+      "displayNameKey": "tool.hoe_basic.name",
+      "action": "till",
+      "rangeTiles": 1
+    },
+    {
+      "id": "watering_can_basic",
+      "displayNameKey": "tool.watering_can_basic.name",
+      "action": "water",
+      "rangeTiles": 1
+    }
+  ]
+}
+```
+
+MVP 不实现耐久、升级、水量或范围强化。
+
+## `maps.json`
+
+```json
+{
+  "schemaVersion": 1,
+  "maps": [
+    {
+      "id": "mvp_farm",
+      "displayNameKey": "map.mvp_farm.name",
+      "widthTiles": 30,
+      "heightTiles": 30,
+      "tileSizePixels": 32,
+      "spawnTile": { "x": 15, "y": 18 },
+      "sleepTile": { "x": 15, "y": 22 },
+      "farmableArea": {
+        "min": { "x": 5, "y": 5 },
+        "max": { "x": 14, "y": 14 }
+      }
+    }
+  ]
+}
+```
+
+`tileSizePixels: 32` 已确认为地图基准；示例中的出生点、睡觉点和耕作区坐标仍需在地图阶段确定。碰撞和可耕作区可以从 TMX 对象层导入，避免重复维护。
+
+## `localization.json`
+
+```json
+{
+  "schemaVersion": 1,
+  "defaultLocale": "zh-CN",
+  "locales": {
+    "zh-CN": {
+      "item.mistleaf_seed.name": "雾叶草种子",
+      "item.mistleaf.name": "雾叶草",
+      "tool.hoe_basic.name": "旧锄头",
+      "tool.watering_can_basic.name": "小水壶",
+      "map.mvp_farm.name": "山雾药圃"
+    }
+  }
+}
+```
+
+实现时可拆分每种语言文件，避免单文件膨胀。
+
+## Save Schema
+
+示意：
+
+```json
+{
+  "saveVersion": 1,
+  "savedAt": "2026-07-13T12:00:00.000Z",
+  "player": {
+    "mapId": "mvp_farm",
+    "position": { "x": 0, "y": 0 },
+    "facing": "down"
+  },
+  "clock": {
+    "currentDay": 1,
+    "timeOfDay": 480
+  },
+  "inventory": {
+    "capacity": 12,
+    "selectedSlot": 0,
+    "slots": [
+      { "itemId": "mistleaf_seed", "quantity": 3 }
+    ]
+  },
+  "farm": {
+    "mapId": "mvp_farm",
+    "tiles": [
+      {
+        "x": 7,
+        "y": 8,
+        "isTilled": true,
+        "wateredOnDay": 1,
+        "crop": {
+          "cropId": "mistleaf",
+          "plantedOnDay": 1,
+          "growthProgress": 0,
+          "stageIndex": 0,
+          "lastGrowthDay": 0
+        }
+      }
+    ]
+  },
+  "settings": {
+    "musicVolume": 1,
+    "soundVolume": 1,
+    "muted": false
+  }
+}
+```
+
+当前存档类型把 `player.position` 保留为与渲染解耦的二维数值；在阶段 2/4 固定坐标转换规则后，再明确它代表世界坐标还是“瓦片 + 局部偏移”。农田始终保存整数瓦片坐标。
+
+## Required Validation
+
+当前初始化校验器已覆盖 schema 版本、ID 唯一性、物品/作物/工具交叉引用、正整数成长阶段、地图内坐标、可耕作矩形和默认语言显示键。价格非负、ID 格式、未知字段和完整运行时解码将在数据加载阶段补齐；当前不能把 TypeScript 接口当成不可信 JSON 的运行时验证。
+
+- ID 唯一且格式合法。
+- `seedItemId`、`harvestItemId`、`cropId` 引用存在且类型匹配。
+- 数量、价格、尺寸和天数为非负整数；堆叠上限大于零。
+- 成长阶段非空且每段至少一天。
+- 农田矩形位于地图边界内。
+- 本地化默认语言覆盖所有 MVP 可见键。
+- 存档版本受支持，坐标、背包和作物状态彼此一致。

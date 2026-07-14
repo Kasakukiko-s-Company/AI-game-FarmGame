@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "defaultLocale": "zh-CN",
+  "locales": {
+    "zh-CN": {
+      "item.mistleaf_seed.name": "雾叶草种子",
+      "item.mistleaf.name": "雾叶草",
+      "tool.hoe_basic.name": "旧锄头",
+      "tool.watering_can_basic.name": "小水壶",
+      "map.mvp_farm.name": "山雾药圃"
+    }
+  }
+}
