@@ -74,6 +74,6 @@ Creator 3.8.8 的场景面板会错误处理数组形式的自定义 `@requireCo
 - 当前分支：`main`
 - 远程：`origin = git@github.com:kasakukiko/AI-game-FarmGame.git`
 - 工程初始化基线已在提交 `9108c8e` 中创建并推送到 `origin/main`。
-- 阶段 2 的移动切片已通过编辑器导入、组件绑定和预览验收，保持为未提交工作区改动，等待用户决定是否创建并推送阶段基线。
+- 阶段 2 的移动切片已通过编辑器导入、组件绑定和预览验收；基线提交 `cbbfa29` 已推送到 `origin/main`。
 
 不要提交 AppSecret、登录凭据、二维码、`.env`、构建缓存或来源不明素材。
