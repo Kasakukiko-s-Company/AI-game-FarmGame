@@ -2,9 +2,68 @@
 
 ## 当前阶段
 
-阶段 0 与工具安装验收已经完成。Cocos Creator 3.8.8 工程、代码基线、数据文件和本地 Git 已初始化；尚未开始实现玩法。
+阶段 0 与工具安装验收已经完成。Cocos Creator 3.8.8 工程、代码基线、数据文件和本地 Git 已初始化。
 
-阶段 1 已完成。工程、`640×360` 默认设计分辨率、最小 `Main` 场景和浏览器预览都已通过验收；尚未开始玩法实现。
+阶段 1 已完成。工程、`640×360` 默认设计分辨率、最小 `Main` 场景和浏览器预览都已通过验收。
+
+阶段 2 已完成。代码、自动化测试、Cocos Creator 3.8.8 脚本导入、组件绑定和浏览器预览均已通过验收。
+
+## 阶段 2：角色移动原型（已完成）
+
+### A. 让编辑器导入新脚本（已完成）
+
+2026-07-14 12:53，Creator 3.8.8 已为 6 个新脚本生成 `.meta`。已检查 importer 均为 `typescript`，UUID 无重复。
+
+1. 停止浏览器预览并返回 Cocos Creator 3.8.8。
+2. 在 Assets/资源管理器面板点击右上角圆形“刷新”按钮。
+3. 等待导入完成，展开 `assets/scripts/player` 和 `assets/scripts/platform`。
+4. 确认能看到 `PlayerController`、`PlayerMovement`、`PlayerPlaceholderView`、`KeyboardInputBridge` 和 `TouchInputPort`，Console 没有新红色错误。
+5. 如果组件搜索列表里暂时没有这些脚本，等待编译结束后再搜索；不要自行创建 `.meta`。
+
+### B. 创建 Player 节点并绑定组件
+
+1. 双击打开 `assets/scenes/Main.scene`。
+2. 在 Hierarchy/层级管理器中右键 `Canvas`，选择 **Create Empty Node / 创建空节点**，命名为 `Player`。
+3. 选中 `Player`，在 Inspector 中设置：
+   - Position：`X = 0`、`Y = 0`、`Z = 0`
+   - Layer：`UI_2D`
+4. 点击 **Add Component / 添加组件**，搜索并添加 `KeyboardInputBridge`。
+5. 确认 `PlayerController` 被自动添加；将其 `Move Speed` 保持为 `96`。
+6. 再添加 `PlayerPlaceholderView`。
+7. 确认 `Graphics` 被自动添加，并确认节点已有 `UITransform`；占位视图保持 `Width = 18`、`Height = 24`。
+8. 同一个 `Player` 节点只保留一份上述组件，不要添加第二个 Camera、Canvas 或键盘桥。
+9. 按 `Ctrl+S` 保存场景。
+
+### C. 浏览器预览验收
+
+1. 如果曾在添加 `PlayerPlaceholderView` 时看到 `Right-hand side of 'instanceof' is not callable`，先点击 Assets 面板刷新按钮并等待脚本重新编译。该兼容问题已在代码中修复，不需要删除或重建现有组件。
+2. 清空 Console 中的旧记录，点击顶部三角形预览按钮。
+3. 如果键盘第一次没有响应，先用鼠标点击一次黑色游戏画面，让浏览器获得焦点。
+4. 分别验证：
+   - `W/A/S/D` 可向上/左/下/右移动。
+   - 四个方向键产生相同方向移动。
+   - 同时按两个垂直方向键可以斜向移动，但不会比单方向更快；自动化测试已精确覆盖速度长度。
+   - 角色边缘的黄色朝向标记会随主方向变化，松开按键后保持最后朝向。
+5. 本阶段没有碰撞或边界限制，角色可以走出画面；停止并重新预览可重置位置。
+6. 返回编辑器确认红色错误计数为 0。
+7. 回复 Codex：
+
+```text
+新脚本导入：成功/失败
+WASD：成功/失败
+方向键：成功/失败
+斜向移动：成功/失败
+停止后朝向保留：成功/失败
+Console 新错误：无/完整错误文本
+```
+
+### D. 验收记录
+
+- 验收日期：2026-07-14。
+- `Main.scene/Canvas/Player` 已由 Creator 保存，位置 `(0, 0, 0)`、层 `UI_2D`，5 个所需组件齐全。
+- 浏览器以 `640×360` 设计分辨率预览成功，原创几何角色正常显示。
+- WASD、方向键、斜向移动和停止后朝向保留：用户实测全部成功。
+- 修复组件元数据兼容问题并刷新后，红色错误计数为 0。
 
 ## 阶段 1：编辑器操作（已完成）
 
@@ -75,7 +134,7 @@
 - 5 个 JSON 文件解析、交叉引用和地图尺寸基线检查通过。
 - `settings/v2/packages/project.json` 已复核为 `640×360`、`Fit Height = true`、`Fit Width = false`。
 - `Main.scene` 已复核包含 Canvas、自动生成的 Camera 和正确组件引用。
-- 截图中的一条 `msg not exist!` 来自 Creator 自带 `cocos-service`，时间早于场景创建，且没有项目堆栈帧；它不作为项目代码失败，但必须清空后重新预览以建立干净验收结果。
+- 截图中的一条 `msg not exist!` 来自 Creator 自带 `cocos-service`，时间早于场景创建，且没有项目堆栈帧；验收时已清空记录并重新预览，红色错误计数为 0。
 
 ## 工具安装验收记录
 

@@ -10,5 +10,6 @@
     "noImplicitOverride": true,
     "noUncheckedIndexedAccess": true,
     "useUnknownInCatchVariables": true
-  }
+  },
+  "include": ["assets/**/*.ts"]
 }

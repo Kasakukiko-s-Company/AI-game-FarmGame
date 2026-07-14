@@ -41,19 +41,39 @@ Get-ChildItem -LiteralPath 'assets\data' -Filter '*.json' | ForEach-Object {
 
 跨文件规则由 `assets/scripts/data/GameDataValidator.ts` 表达；数据接入启动流程时必须在结构解码后调用它。当前地图基线是 30×30 瓦片、每格 32 像素、10×10 可耕作矩形。
 
+## 自动化测试
+
+当前纯移动规则使用 Node.js 24 内置测试运行器，不需要下载第三方测试框架。在 PowerShell 中使用 `npm.cmd`，避免本机执行策略拦截 `npm.ps1`：
+
+```powershell
+npm.cmd test
+```
+
+只运行玩家移动测试：
+
+```powershell
+npm.cmd run test:player
+```
+
+测试位于 `tests/player`，不进入 Cocos 资源数据库；`tsconfig.json` 只包含 `assets/**/*.ts`，项目脚本仍由 Creator 自带 TypeScript 严格检查。
+
 ## 模块边界
 
 - `core/save`：版本化、平台无关的存档数据。
 - `data`：JSON 类型、结构解码后的跨文件校验。
 - `platform`：平台接口与适配器，不包含游戏规则。
-- `player`、`world`、`farming`、`inventory`、`ui`：仅建立目录，等待对应垂直切片，不提前填充空架构。
+- `world`、`farming`、`inventory`、`ui`：仅建立目录，等待对应垂直切片，不提前填充空架构。
+- `player`：阶段 2 已实现纯移动规则、节点控制器和原创几何占位视图；碰撞与地图查询仍留在后续阶段。
 
 核心模块不得直接访问 `wx`、`window` 或 `localStorage`。场景、资源 `.meta`、项目设置和组件绑定必须由 Cocos Creator 3.8.8 生成。
+
+Creator 3.8.8 的场景面板会错误处理数组形式的自定义 `@requireComponent([...])` 元数据，并抛出 `Right-hand side of 'instanceof' is not callable`。项目组件只声明单个自动依赖；其余依赖由同节点的其他组件或手动步骤保证。`tests/player/CocosComponentMetadata.test.mts` 用于防止该问题回归。
 
 ## Git
 
 - 当前分支：`main`
 - 远程：`origin = git@github.com:kasakukiko/AI-game-FarmGame.git`
-- 工程初始化阶段不提交、不推送；待场景预览验收后再由用户决定是否创建首个提交。
+- 工程初始化基线已在提交 `9108c8e` 中创建并推送到 `origin/main`。
+- 阶段 2 的移动切片已通过编辑器导入、组件绑定和预览验收，保持为未提交工作区改动，等待用户决定是否创建并推送阶段基线。
 
 不要提交 AppSecret、登录凭据、二维码、`.env`、构建缓存或来源不明素材。

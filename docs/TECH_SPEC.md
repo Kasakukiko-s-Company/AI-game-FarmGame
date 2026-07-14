@@ -76,6 +76,24 @@ Platform Interfaces ← Desktop / WeChat Adapters
 
 场景节点只保存渲染缓存和组件引用。改变状态必须通过明确命令，例如 `TillTile`、`PlantCrop`、`WaterTile`、`EndDay`、`HarvestCrop`。
 
+## Player Movement Slice
+
+阶段 2 的移动依赖方向为：
+
+```text
+Cocos Keyboard Events → KeyboardInputBridge → IInputService
+                                             ↓
+                                      PlayerController
+                                             ↓
+                                    PlayerMovement rules
+```
+
+- `PlayerMovement` 是无 Cocos 依赖的纯规则，负责输入归一化、速度、位移和最后朝向。
+- 键盘桥支持 WASD 与方向键；同时按两个方向时规则把向量限制在单位圆内，不产生斜向加速。
+- `TouchInputPort` 是后续虚拟摇杆写入语义移动向量的入口，本阶段不实现触控 UI。
+- `PlayerController` 只消费接口并移动节点，不监听物理按键。
+- `PlayerPlaceholderView` 只负责 Graphics 占位表现和朝向标记，不拥有移动规则。
+
 ## Save Design
 
 存档至少包含：

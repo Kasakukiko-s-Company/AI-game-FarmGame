@@ -122,7 +122,7 @@ references/
 
 ## 阶段 2：角色移动原型
 
-状态：`[ ]`
+状态：`[x]`，代码、自动化测试、Cocos 场景绑定和浏览器预览全部通过。
 
 范围：四方向移动、WASD/方向键、统一输入接口、触控输入端口、可配置速度、归一化移动向量、朝向状态。只使用占位几何图形或原创占位图。
 
@@ -133,6 +133,28 @@ references/
 - `PlayerController` 不直接监听平台 API。
 - 停止移动后仍保留最后朝向。
 - 编辑器节点与组件绑定步骤可复现。
+
+2026-07-14 已完成：
+
+- 新增纯 TypeScript `PlayerMovement`：输入有限值处理、单位圆归一化、可配置速度、帧位移和四方向最后朝向。
+- 新增 `PlayerController`：只读取 `IInputService` 语义快照，不注册键盘或触摸事件。
+- 新增 `KeyboardInputBridge`：将 WASD 和方向键映射为统一移动轴，按键注册/注销由 Cocos 组件生命周期管理。
+- 新增 `TouchInputPort`：为后续虚拟摇杆提供 `setMoveVector`/`releaseMovement` 语义入口，不接触 `wx` 或原始触摸坐标。
+- 新增 `PlayerPlaceholderView`：使用 Cocos Graphics 绘制项目内原创几何占位角色，并以黄色标记显示最后朝向。
+- 存档中的 `FacingDirection` 改为复用玩家领域类型，避免朝向定义漂移。
+- Node 24 内置测试运行器执行 7 项移动规则测试：全部通过。
+- Creator 3.8.8 自带 TypeScript 5.8.2 项目检查：通过。
+- 核心/玩法模块扫描未发现 `wx`、`window` 或 `localStorage`。
+- Creator 3.8.8 已为 6 个新脚本生成 `.meta`；已检查 importer 均为 `typescript`，UUID 无重复。
+- 修复 Creator 3.8.8 场景面板无法处理数组形式 `requireComponent` 元数据的问题；占位视图只声明单一 `Graphics` 依赖，节点既有的 `UITransform` 和键盘桥自动添加的 `PlayerController` 继续复用。
+- 新增对应回归测试，可稳定捕获 `Right-hand side of 'instanceof' is not callable`。
+
+人工验收结果：
+
+- `Main.scene/Canvas/Player` 已由 Creator 编辑器生成并保存；位置 `(0, 0, 0)`、层 `UI_2D`，包含 `UITransform`、`PlayerController`、`KeyboardInputBridge`、`Graphics`、`PlayerPlaceholderView`。
+- 浏览器以 `640×360` 设计分辨率预览成功，原创几何角色正常显示。
+- 用户实测 WASD、方向键、斜向移动和停止后朝向保留均成功；刷新并清空旧记录后红色错误计数为 0。
+- Creator 最新编译产物已确认使用单一 `requireComponent(Graphics)`，修复后没有产生新的同类错误。
 
 ## 阶段 3：Tiled 地图与碰撞
 

@@ -1,7 +1,9 @@
+import type { FacingDirection } from '../../player/PlayerMovement';
+
+export type { FacingDirection } from '../../player/PlayerMovement';
+
 export const CURRENT_SAVE_VERSION = 1;
 export const MVP_SAVE_SLOT_ID = 'autosave';
-
-export type FacingDirection = 'up' | 'down' | 'left' | 'right';
 
 export interface Vector2Data {
   readonly x: number;

@@ -2,6 +2,10 @@
   "name": "farm-game",
   "private": true,
   "version": "0.1.0",
+  "scripts": {
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test",
+    "test:player": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/player/PlayerMovement.test.mts"
+  },
   "creator": {
     "version": "3.8.8"
   },
