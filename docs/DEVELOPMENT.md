@@ -76,7 +76,7 @@ npm.cmd run test:world
 - `platform`：平台接口与适配器，不包含游戏规则。
 - `farming`、`inventory`、`ui`：仅建立目录，等待对应垂直切片，不提前填充空架构。
 - `player`：阶段 2 已实现纯移动规则、节点控制器和原创几何占位视图；阶段 3B 只通过接口接受 world 碰撞约束，不直接查询 Tiled。
-- `world`：阶段 3A 已完成 Tiled 导入链路；阶段 3B 已完成网格碰撞；阶段 3C 已完成有界相机；阶段 4A 已完成纯瓦片交互规则；阶段 4B 已完成只读交互目标调试视图及 Creator 场景验收。
+- `world`：阶段 3A 已完成 Tiled 导入链路；阶段 3B 已完成网格碰撞；阶段 3C 已完成有界相机；阶段 4A 已完成纯瓦片交互规则；阶段 4B 已完成只读交互目标调试视图；阶段 4C 已完成纯可耕作查询及 Creator 导入回归。
 
 核心模块不得直接访问 `wx`、`window` 或 `localStorage`。场景、资源 `.meta`、项目设置和组件绑定必须由 Cocos Creator 3.8.8 生成。
 
@@ -113,6 +113,7 @@ $process.ExitCode
 - 阶段 3B 的阻挡地图与碰撞代码已完成 Creator 组件绑定和浏览器预览验收；基线提交 `39beb78` 已推送到 `origin/main`。
 - 阶段 3C 的有界摄像机跟随、尺寸切换输入修复和浏览器验收已完成；基线提交 `874076c` 已推送到 `origin/main`。
 - 阶段 4A 的纯坐标与面向瓦片规则、Creator 导入和预览回归已完成；基线提交 `c0c83bc` 已推送到 `origin/main`。
-- 阶段 4B 的 `TileInteractionDebugView`、Creator 生成的 `.meta`、场景绑定和浏览器预览均已验收；当前保持为尚未提交的工作区改动。
+- 阶段 4B 的 `TileInteractionDebugView`、Creator 元数据、场景绑定和浏览器预览均已验收；基线提交 `0a0d0c2` 已推送到 `origin/main`。
+- 阶段 4C 的纯可耕作查询、Creator 元数据和浏览器预览均已验收；当前保持为尚未提交的工作区改动。
 
 不要提交 AppSecret、登录凭据、二维码、`.env`、构建缓存或来源不明素材。

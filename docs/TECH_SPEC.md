@@ -148,6 +148,16 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 - 调试框使用半透明填充和描边，仅表达“当前交互目标”；它不代表可通行、可耕作或可执行工具动作。
 - 面向地图外时纯规则返回 `null`，调试视图清空；缺少 Target 或 Tiled Map 时只警告一次。
 
+## Tile Farmability Query Slice
+
+阶段 4C 只回答目标瓦片是否允许后续农田操作，不创建或修改农田状态：
+
+- `TileFarmabilityMap` 接收有限地图尺寸、包含边界的可耕作矩形和底部原点 `isBlocked(x, y)` 查询；纯规则不依赖 Cocos、Tiled 或平台 API。
+- `isTileFarmable` 对 `null`、负坐标、地图外坐标和非整数瓦片统一返回 `false`。
+- 地图内整数瓦片必须同时位于配置矩形内且未被阻挡才返回 `true`；边界瓦片属于矩形内部。
+- `assets/data/maps.json` 的 `farmableArea` 是 MVP 可耕作范围的唯一内容配置；TMX 不再维护重复的 `Farmable` 图层。
+- 阶段 5 通过适配层提供真实 `Blocking` 查询并消费这个布尔结果；本切片不读取 JSON、不监听输入，也不执行锄地。
+
 ## Tiled Import Smoke Baseline
 
 阶段 3 先锁定最保守的导入边界，再实现地图玩法：
