@@ -8,6 +8,62 @@
 
 阶段 2 已完成。代码、自动化测试、Cocos Creator 3.8.8 脚本导入、组件绑定和浏览器预览均已通过验收。
 
+阶段 3 已开始，目前只执行“Tiled 导入冒烟测试”。TMX 和原创占位纹理已由 Tiled/项目工具生成并被 Creator 导入；等待以下纹理设置、场景绑定和预览验收。
+
+## 阶段 3A：Tiled 导入冒烟测试（已完成）
+
+本节只验证地图能正确显示，不添加阻挡、碰撞、房屋、可耕作区、睡觉点或摄像机跟随。
+
+### A. 确认纹理导入状态
+
+1. 停止浏览器预览，回到 Cocos Creator 3.8.8。
+2. 在 Assets/资源管理器中展开 `assets/maps`，确认能看到 `mvp_farm` 和 `mvp_farm_ground`，底部 Console 没有新红色导入错误。
+3. 单击顶层 `mvp_farm_ground` 图片，保持右侧 **类型** 为 `sprite-frame`。在 Creator 3.8.8 中，该模式只显示 `spriteFrame` 子资源，内部 `texture` 不出现在资源树里，属于正常现象。
+4. 不要为了寻找过滤选项而切换顶层 **类型**，也不要直接编辑 `.meta`；这两种操作都可能改变 TMX 当前引用的资源结构。
+5. 当前内部纹理已经由 Codex 实际检查：`Mip Filter = None`，横纵 Wrap 均为 `Clamp To Edge`；Min/Mag 仍为 `Linear`，但在此版本的 `sprite-frame` Inspector 中没有可直接修改的入口。
+6. 本次导入冒烟测试先保持现状，在浏览器预览中实际观察是否有接缝或模糊。若出现问题，再在后续像素地图资源流程中处理稳定的 Nearest/图集边缘扩展方案。
+
+### B. 创建 World 并绑定 TMX
+
+1. 双击打开 `assets/scenes/Main.scene`。
+2. 在左上角 Hierarchy/层级管理器中右键 `Canvas`，选择 **Create Empty Node / 创建空节点**，命名为 `World`。
+3. 将 `World` 拖到 `Canvas` 子节点列表中 `Player` 的上方；最终顺序应为 `Camera`、`World`、`Player`，这样玩家绘制在地图上方。
+4. 选中 `World`，在 Inspector 中设置 Position 为 `X=0`、`Y=0`、`Z=0`，Layer 为 `UI_2D`。
+5. 滚动到 Inspector 底部，点击 **Add Component / 添加组件**，搜索并添加内置组件 `TiledMap`。
+6. 在新增的 `cc.TiledMap` 组件中找到 **Tmx Asset** 空槽。
+7. 从左下角 Assets 面板把 `mvp_farm` 拖到 **Tmx Asset** 空槽中。
+8. 等待地图生成；Hierarchy 中 `World` 下应出现名为 `Ground` 的子节点。不要手动创建 `Ground`。
+9. 按 `Ctrl+S` 保存场景。
+
+### C. 浏览器预览验收
+
+1. 清空 Console，点击顶部三角形预览按钮。
+2. 预期游戏区域出现绿色草地图，Player 仍显示在地图上方。
+3. 点击游戏画面后测试 WASD 和方向键，确认移动仍正常。
+4. 观察草地图块之间是否出现明显黑线、白线、模糊边缘或闪烁。
+5. 本子任务没有碰撞，玩家可在草地任意移动或走出地图，属于正常现象。
+6. 返回 Creator，确认红色错误计数为 0。
+7. 回复 Codex：
+
+```text
+纹理类型保持 sprite-frame：是/否
+Tmx Asset 绑定：成功/失败
+World 下出现 Ground：是/否
+草地图预览：成功/失败
+Player 显示在地图上方：是/否
+移动仍正常：是/否
+明显图块接缝或模糊：无/具体表现
+  Console 新错误：无/完整错误文本
+  ```
+
+### D. 验收记录
+
+- 验收日期：2026-07-14。
+- `Tmx Asset` 绑定成功，Creator 在 `World` 下自动生成 `Ground`，Console 没有新导入或场景错误。
+- 640×360 浏览器预览成功：草地图覆盖视口，Player 显示在地图上方，WASD/方向键移动仍正常。
+- 未观察到明显黑线、白线、模糊边缘、图块接缝或闪烁。
+- 本子任务只证明基础 TMX 导入链路可用；阻挡层、碰撞和摄像机跟随尚未实现。
+
 ## 阶段 2：角色移动原型（已完成）
 
 ### A. 让编辑器导入新脚本（已完成）

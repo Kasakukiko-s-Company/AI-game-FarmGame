@@ -158,7 +158,7 @@ references/
 
 ## 阶段 3：Tiled 地图与碰撞
 
-状态：`[ ]`
+状态：`[~]`，第一个子任务“Tiled 导入冒烟测试”已完成；尚未开始阻挡、碰撞和摄像机跟随。
 
 范围：使用 32×32 像素瓦片制作 30×30 农场、10×10 可耕作区、不可进入的房屋外观、屋外睡觉交互点、阻挡层和摄像机跟随。地图与图块必须原创或有明确授权。
 
@@ -167,6 +167,18 @@ references/
 - `.tmx`、必要的 `.tsx` 与纹理同目录并可由 Cocos 正确导入。
 - 玩家无法穿越阻挡层，摄像机不展示地图外区域。
 - 检查像素接缝、纹理过滤和不同分辨率下的表现。
+
+2026-07-14 阶段 3A“Tiled 导入冒烟测试”完成记录：
+
+- 使用项目内 TypeScript 工具确定性生成原创 `32×32` 草地占位 PNG；来源、色板、哈希和用途已记录到 `docs/ASSET_SOURCES.md`。
+- 由 Tiled 1.12.2 实际导出 `30×30`、正交、单一 `Ground` 图层、未压缩 CSV、嵌入 tileset 的 `mvp_farm.tmx`。
+- Cocos Creator 3.8.8 已自动导入 TMX 和 PNG，生成的 importer 分别为 `tiled-map` 与 `image`；asset-db 日志没有导入错误。
+- Node 自动测试固定 PNG 尺寸、TMX 版本、地图/瓦片尺寸、图层名、纹理相对路径、CSV 编码和 900 个 GID；当前 9 项测试全部通过。
+- Creator 已将 `Main.scene/Canvas/World`、`cc.TiledMap`、`Ground` 和 `mvp_farm.tmx` 引用写入场景，节点顺序为 `Camera`、`World`、`Player`。
+- `mvp_farm_ground` 保持 `sprite-frame`；隐藏的内部纹理为 Mip None、Wrap Clamp To Edge、Min/Mag Linear。浏览器实测没有明显图块接缝或模糊，因此本冒烟基线不切换资源类型或手改 `.meta`。
+- 640×360 浏览器预览显示草地图覆盖视口，Player 位于地图上方且移动正常，Creator Console 没有新红色错误。
+
+下一子任务才会逐步加入阻挡层与碰撞；当前验收完成不代表阶段 3 整体完成。
 
 ## 阶段 4：瓦片坐标与交互检测
 

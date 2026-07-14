@@ -127,6 +127,16 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 
 所有转换集中在 `world` 模块。地图原点、Y 轴方向、瓦片中心偏移和边界规则必须由测试固定，不能在各组件中重复计算。
 
+## Tiled Import Smoke Baseline
+
+阶段 3 先锁定最保守的导入边界，再实现地图玩法：
+
+- Tiled 1.12.2、正交有限地图、`30×30`、每格 `32×32`。
+- 单一 `Ground` 图层，未压缩 CSV，嵌入单图块 tileset，纹理与 TMX 同目录。
+- 占位图块由项目内 TypeScript 工具确定性生成，不包含外部或商业游戏素材。
+- Cocos 3.8.8 本地解析源码已确认支持 CSV；冒烟测试不使用无限地图、复杂对象模板、脚本或图块动画。
+- Creator 导入、场景绑定和 640×360 浏览器预览已经通过，未观察到图块接缝；后续子任务才逐步加入阻挡、房屋、可耕作区、睡觉点、碰撞与摄像机。
+
 ## Farming Rules
 
 建议地块状态：
