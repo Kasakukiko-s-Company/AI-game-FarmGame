@@ -7,7 +7,7 @@
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test",
     "test:platform": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/platform/KeyboardInputLifecycle.test.mts",
     "test:player": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/player/PlayerMovement.test.mts",
-    "test:world": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/world/TiledSmokeMap.test.mts tests/world/GridCollision.test.mts tests/world/CameraBounds.test.mts"
+    "test:world": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/world/TiledSmokeMap.test.mts tests/world/GridCollision.test.mts tests/world/CameraBounds.test.mts tests/world/TileInteraction.test.mts"
   },
   "creator": {
     "version": "3.8.8"

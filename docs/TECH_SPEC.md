@@ -128,6 +128,16 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 
 所有转换集中在 `world` 模块。地图原点、Y 轴方向、瓦片中心偏移和边界规则必须由测试固定，不能在各组件中重复计算。
 
+## Tile Interaction Slice
+
+阶段 4A 固定平台无关的坐标与面向规则：
+
+- `TileGridGeometry` 描述有限地图宽高、瓦片尺寸和世界坐标左下原点；瓦片 `(0,0)` 位于地图左下角。
+- `worldToTile` 对相对地图原点的坐标使用 `Math.floor`，因此负方向、精确最大边界和地图外输入不会被错误截断或夹取；地图外统一返回 `null`。
+- `tileToWorldCenter` 只接受地图内整数瓦片，使用半格偏移返回世界坐标中心。
+- `getFacingTile` 先定位玩家所在瓦片，再按 `FacingDirection` 选择上、下、左或右相邻一格；固定交互距离为一格，越界返回 `null`。
+- 屏幕坐标到世界坐标属于后续 Cocos 适配层职责；可耕作性属于地图查询职责，均不进入本纯规则模块。
+
 ## Tiled Import Smoke Baseline
 
 阶段 3 先锁定最保守的导入边界，再实现地图玩法：

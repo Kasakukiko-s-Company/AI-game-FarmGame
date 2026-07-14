@@ -76,7 +76,7 @@ npm.cmd run test:world
 - `platform`：平台接口与适配器，不包含游戏规则。
 - `farming`、`inventory`、`ui`：仅建立目录，等待对应垂直切片，不提前填充空架构。
 - `player`：阶段 2 已实现纯移动规则、节点控制器和原创几何占位视图；阶段 3B 只通过接口接受 world 碰撞约束，不直接查询 Tiled。
-- `world`：阶段 3A 已完成 Tiled 导入链路；阶段 3B 已完成网格碰撞；阶段 3C 已完成纯相机边界规则、`BoundedCameraFollow` 和尺寸切换回归验收。
+- `world`：阶段 3A 已完成 Tiled 导入链路；阶段 3B 已完成网格碰撞；阶段 3C 已完成有界相机；阶段 4A 已完成纯瓦片坐标互转、面向交互目标规则和 Creator 导入验收。
 
 核心模块不得直接访问 `wx`、`window` 或 `localStorage`。场景、资源 `.meta`、项目设置和组件绑定必须由 Cocos Creator 3.8.8 生成。
 
@@ -112,5 +112,6 @@ $process.ExitCode
 - 阶段 3A 的 Tiled 冒烟测试已完成 Creator 场景绑定和浏览器预览验收；基线提交 `7cfb514` 已推送到 `origin/main`。
 - 阶段 3B 的阻挡地图与碰撞代码已完成 Creator 组件绑定和浏览器预览验收；基线提交 `39beb78` 已推送到 `origin/main`。
 - 阶段 3C 的有界摄像机跟随、尺寸切换输入修复和浏览器验收已完成；基线提交 `874076c` 已推送到 `origin/main`。
+- 阶段 4A 的纯坐标与面向瓦片规则当前保持为未提交工作区改动；Creator 导入及移动、碰撞、相机预览回归均已完成验收。
 
 不要提交 AppSecret、登录凭据、二维码、`.env`、构建缓存或来源不明素材。
