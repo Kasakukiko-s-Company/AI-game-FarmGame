@@ -138,6 +138,16 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 - `getFacingTile` 先定位玩家所在瓦片，再按 `FacingDirection` 选择上、下、左或右相邻一格；固定交互距离为一格，越界返回 `null`。
 - 屏幕坐标到世界坐标属于后续 Cocos 适配层职责；可耕作性属于地图查询职责，均不进入本纯规则模块。
 
+## Tile Interaction Debug View Slice
+
+阶段 4B 只把阶段 4A 的目标瓦片变为可观察的场景结果：
+
+- `TileInteractionDebugView` 在 `lateUpdate` 读取 Player 世界位置与 `PlayerController.facing`，确保移动和朝向更新后再绘制。
+- Player 世界位置先通过 TiledMap 的 `UITransform` 转为地图局部坐标；纯规则计算瓦片后，瓦片中心再经世界坐标转换到调试节点局部坐标。
+- 调试节点使用独立 `Graphics`，避免与 `PlayerPlaceholderView` 共用画笔并互相 `clear()`。
+- 调试框使用半透明填充和描边，仅表达“当前交互目标”；它不代表可通行、可耕作或可执行工具动作。
+- 面向地图外时纯规则返回 `null`，调试视图清空；缺少 Target 或 Tiled Map 时只警告一次。
+
 ## Tiled Import Smoke Baseline
 
 阶段 3 先锁定最保守的导入边界，再实现地图玩法：

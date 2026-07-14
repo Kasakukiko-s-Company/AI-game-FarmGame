@@ -8,7 +8,68 @@
 
 阶段 2 已完成。代码、自动化测试、Cocos Creator 3.8.8 脚本导入、组件绑定和浏览器预览均已通过验收。
 
-阶段 3A、阶段 3B、阶段 3C 和阶段 4A 均已完成。阶段 4A 的纯瓦片规则导入及移动、碰撞、相机回归已经通过验收。
+阶段 3A、阶段 3B、阶段 3C、阶段 4A 和阶段 4B 均已完成。当前不进入下一阶段，等待明确指令。
+
+## 阶段 4B：场景交互目标调试框（已完成）
+
+本节只显示 Player 当前朝向的相邻瓦片，不加入可耕作性、锄地、屏幕点击或农田状态。
+
+### A. 导入新组件
+
+1. 停止浏览器预览，回到 Cocos Creator 3.8.8。
+2. 在左下角资源管理器点击右上角圆形 **刷新** 按钮，等待脚本编译完成。
+3. 展开 `assets/scripts/world`，确认能看到 `TileInteractionDebugView`。
+4. 不要自行创建或编辑 `.meta`；由 Creator 3.8.8 自动生成。
+5. 确认底部 Console 没有新红色编译错误。
+
+### B. 创建独立调试节点
+
+1. 在左上角 Hierarchy 展开 `Canvas`。
+2. 右键 `Canvas`，选择 **创建空节点 / Create Empty Node**，命名为 `InteractionDebug`。
+3. 如果新节点不在最下方，把它拖到 `Canvas` 内并放在 `Player` 下方，使层级顺序成为 `Camera`、`World`、`Player`、`InteractionDebug`。
+4. 选中 `InteractionDebug`，在 Inspector 设置：
+   - Position：`X = 0`、`Y = 0`、`Z = 0`
+   - Layer：`UI_2D`
+5. 点击 Inspector 底部 **添加组件 / Add Component**，搜索并添加 `TileInteractionDebugView`。
+6. 添加后应自动出现 `Graphics`，节点也应有 `UITransform`；不要再手动添加第二份 `Graphics`。
+7. 在 `TileInteractionDebugView` 中，把 Hierarchy 的 `Player` 拖入 **Target**。
+8. 把 Hierarchy 的 `World` 拖入 **Tiled Map**；槽内应显示 World 上的 `TiledMap` 组件。
+9. 不要给该节点添加 `PlayerController`、`KeyboardInputBridge` 或 `TiledCollisionBridge`。
+10. 按 `Ctrl+S`，让 Creator 保存场景绑定。
+
+### C. 浏览器预览验收
+
+1. 清空 Console，点击顶部三角形预览按钮，再点击游戏画面取得键盘焦点。
+2. Player 附近应出现一个 `32×32` 的黄色半透明方框；它应位于黄色朝向圆点所指方向的相邻一格，而不是覆盖 Player 自己。
+3. 分别短按 `W`、`S`、`A`、`D` 并松开：方框应切换到上、下、左、右相邻瓦片，停止后保持最后朝向。
+4. 在同一瓦片内部小幅移动时，方框保持在同一格；Player 跨入下一瓦片时，方框按完整瓦片跳到新目标。
+5. 靠近石墙时方框允许覆盖石墙瓦片；本阶段还没有可耕作性过滤，这是正常结果，Player 本身仍不能穿墙。
+6. 走到地图边缘并面向地图外：方框应消失；转回地图内后应重新出现。
+7. 确认相机跟随和地图边界仍正常。
+8. 返回 Creator，确认红色错误计数为 0，也没有反复出现 `[TileInteractionDebugView] Assign Target and Tiled Map...` 警告。
+9. 回复 Codex：
+
+```text
+新组件导入：成功/失败
+InteractionDebug 节点和组件：成功/失败
+Target：Player
+Tiled Map：World
+四方向目标格：正常/异常
+跨瓦片更新：正常/异常
+石墙碰撞回归：正常/异常
+地图边缘向外时消失：正常/异常
+相机与地图边界：正常/异常
+Console 新错误或重复警告：无/完整内容
+```
+
+### D. 验收记录
+
+- 验收日期：2026-07-14。
+- Creator 3.8.8 已导入 `TileInteractionDebugView`，对应 `.meta` 由编辑器生成，importer 为 `typescript` 且 imported 为 `true`。
+- `Canvas/InteractionDebug` 已由编辑器创建并保存，节点包含独立 `Graphics` 和 `TileInteractionDebugView`；Target=`Player`、Tiled Map=`World`。
+- 四方向目标格、跨瓦片更新和地图边缘向外时隐藏均正常。
+- 石墙碰撞、相机跟随和地图边界回归正常；浏览器预览保持 60 FPS。
+- Creator Console 无新错误或重复警告；阶段 4B 人工验收完成。
 
 ## 阶段 4A：纯坐标与面向瓦片规则（已完成）
 
