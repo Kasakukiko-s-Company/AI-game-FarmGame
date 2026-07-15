@@ -8,7 +8,71 @@
 
 阶段 2 已完成。代码、自动化测试、Cocos Creator 3.8.8 脚本导入、组件绑定和浏览器预览均已通过验收。
 
-阶段 3A、阶段 3B、阶段 3C、阶段 4A～4D、阶段 5A 和阶段 5B 均已完成。当前不进入下一子任务，等待明确指令。
+阶段 3A、阶段 3B、阶段 3C、阶段 4A～4D、阶段 5A、阶段 5B 和阶段 5C 均已完成。当前不进入下一阶段，等待明确指令。
+
+## 阶段 5C：已耕土地视觉（已完成）
+
+本阶段把 `maps.json` 的可耕范围显示为浅黄绿色未耕药圃，并把阶段 5B 的内存耕地状态显示为原创深棕色占位土块。它不加入播种、浇水、存档或正式美术，也不修改 TMX。
+
+### A. 刷新并确认脚本导入
+
+1. 回到已打开的 Cocos Creator 3.8.8。
+2. 在左下角资源管理器点击刷新按钮，等待编译完成。
+3. 展开 `assets → scripts → farming`。
+4. 确认出现 `TilledSoilProjection` 和 `TilledSoilView`。
+5. 查看底部 Console，确认没有新的红色编译错误；不要自行创建或编辑 `.meta`。
+
+### B. 创建显示节点
+
+1. 在层级管理器展开 `Main → Canvas`。
+2. 右键 `Canvas`，选择 **创建空节点 / Create Empty Node**，命名为 `TilledSoil`。
+3. 把 `TilledSoil` 拖动到层级顺序中，使它紧跟在 `World` 后面、位于 `Player` 前面。最终顺序应为：`Camera → World → TilledSoil → Player → InteractionDebug`。
+4. 选中 `TilledSoil`，确认：
+   - Position：`X=0`、`Y=0`、`Z=0`
+   - Scale：`X=1`、`Y=1`
+   - Layer：`UI_2D`
+5. 在属性检查器点击 **添加组件**，搜索并添加 `TilledSoilView`。
+6. `Graphics` 应随 `requireComponent` 自动添加；如果属性检查器中没有 `cc.Graphics`，再手动添加一次，但不要添加重复组件。
+7. 在 `TilledSoilView` 中完成绑定：
+   - `Source`：从层级管理器拖入 `Player` 节点，它会引用该节点上的 `TiledTillingController`。
+   - `Tiled Map`：拖入 `World` 节点。
+8. 按 `Ctrl+S` 保存 `Main.scene`。
+
+不要把 `TilledSoilView` 添加到 Player、World 或 InteractionDebug；独立节点用于固定渲染顺序并避免视图跟随角色移动。
+
+### C. 浏览器预览验收
+
+1. 点击顶部预览按钮，打开浏览器后先点击游戏画面获取键盘焦点。
+2. 预览刚开始时，应能一眼看到 10×10 浅黄绿色网格药圃；外围普通地面仍为绿色。浅黄绿色表示“允许耕作但尚未耕作”，不是已耕地。
+3. 移动到浅黄绿色药圃，使黄色框落在其中一格，短按一次空格。
+4. 黄色框所在格应立即由浅黄绿色变成深棕色土块，内部有三条横向耕沟；浏览器 Console 同时输出 `tilled`。
+5. 不移动并再次短按空格：日志应为 `already_tilled`，画面不能叠出第二块或变深。
+6. 连续耕作两到三个相邻格：每个成功坐标应各出现一个对齐 32×32 网格的土块，角色仍显示在土块上方。
+7. 面向外围绿色草地、石墙或地图外按空格：日志应为 `not_farmable`，不能出现新土块。
+8. 移动相机并切换另一种横屏预览尺寸，药圃和土块应保持在原地图格，不跟随屏幕漂移。
+9. 回归 WASD、方向键、石墙碰撞、相机边界、黄色朝向框和蓝色点击框。
+10. 关闭并重新打开预览后深棕色土块清空、浅黄绿色药圃仍存在是当前预期；持久化属于后续存档阶段。
+11. 浏览器 Console 和 Creator 中不应出现新的红色错误或重复警告。
+
+已知兼容提示：当前 TMX 头部由 Tiled 1.12.2 写为 `version="1.10"`，Creator 可能显示 `[Scene] cocos2d: TMXFormat: Unsupported TMX version: 1.10`。只要地图、碰撞和视觉均正常，它不是阶段 5C 新错误；保留完整文本，后续单独处理，不要在本阶段手改 TMX 版本。
+
+验收记录：
+
+```text
+TilledSoilProjection / TilledSoilView 导入：成功
+TilledSoil 节点和组件：成功
+Source：Player
+Tiled Map：World
+首次空格出现土块：正常
+未耕药圃与外围草地可区分：正常
+同格再次空格不叠加：正常
+相邻土块对齐：正常
+不可耕位置不出现土块：正常
+角色显示在土块上方：正常
+相机移动和横屏尺寸：正常
+现有移动、碰撞和调试框回归：正常
+浏览器或 Creator 新错误：除 TMX 1.10 已知兼容警告外无
+```
 
 ## 阶段 5B：锄头输入与真实地图适配（已完成）
 

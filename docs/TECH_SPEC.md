@@ -194,6 +194,17 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 - 当前 `primaryAction` 暂时等同于使用默认锄头；快捷栏与选中工具路由留到背包阶段。蓝色指针框仍只调试屏幕坐标，阶段 5C 才投影已耕地视觉。
 - 开发期每次有效动作按下在 Console 记录 `tilled`、`already_tilled` 或 `not_farmable`，用于阶段 5B 无视觉切片验收。
 
+## Tilled Soil Rendering Slice
+
+阶段 5C 只把阶段 5A/5B 的权威状态投影为画面，不改变耕地规则：
+
+- `createFarmableGroundPatches(area, grid)` 和 `createTilledSoilPatches(farm, grid)` 是无 Cocos 依赖的只读投影 seam；前者从 JSON 包含边界矩形生成未耕药圃底地，后者从 `FarmState` 生成覆盖其上的已耕地。
+- 投影不会修复或写回状态；非法、非整数或当前地图外的瓦片只在渲染输出中忽略，避免坏存档坐标污染画面。
+- `TilledSoilView` 通过 Inspector 引用 Player 的 `TiledTillingController` 和 World `TiledMap`，只消费 `farmState`。
+- `FarmState` 每次成功耕地创建新引用；视图比较引用并只在变化时重绘。`already_tilled`、`not_farmable` 和普通帧不会触发重复绘制。
+- MVP 视觉使用原创 `Graphics` 三态表现：绿色 Ground 是普通草地，浅黄绿色网格是可耕但未耕的药圃，深棕色矩形、边框和三条耕沟是已耕地。它是可替换的占位表现，不是存档来源，也不修改 TMX 或阻挡层。
+- `TilledSoil` 在 Canvas 中位于 World 之后、Player 和 InteractionDebug 之前，保证土块覆盖草地但不遮挡角色与调试框。
+
 ## Tiled Import Smoke Baseline
 
 阶段 3 先锁定最保守的导入边界，再实现地图玩法：

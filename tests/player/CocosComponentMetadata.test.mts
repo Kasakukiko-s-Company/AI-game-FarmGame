@@ -10,6 +10,7 @@ const COMPONENT_URLS = [
   new URL('../../assets/scripts/world/ScreenTileMapper.ts', import.meta.url),
   new URL('../../assets/scripts/world/TileInteractionDebugView.ts', import.meta.url),
   new URL('../../assets/scripts/farming/TiledTillingController.ts', import.meta.url),
+  new URL('../../assets/scripts/farming/TilledSoilView.ts', import.meta.url),
 ] as const;
 
 test('keeps Creator 3.8.8 requireComponent metadata callable', async () => {

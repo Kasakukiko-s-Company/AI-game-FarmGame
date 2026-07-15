@@ -8,7 +8,11 @@ import {
   UITransform,
   warn,
 } from 'cc';
-import type { MapDefinition, TilePointData } from '../data/GameDataTypes';
+import type {
+  MapDefinition,
+  TilePointData,
+  TileRectangleData,
+} from '../data/GameDataTypes';
 import { PlayerController } from '../player/PlayerController';
 import {
   updateTillingSession,
@@ -94,6 +98,11 @@ export class TiledTillingController extends Component {
 
   public get lastActionStatus(): TillingUpdateResult['status'] {
     return this.actionStatus;
+  }
+
+  /** Exposes the validated visual boundary without leaking the JSON document. */
+  public get farmableArea(): TileRectangleData | null {
+    return this.findMapDefinition()?.farmableArea ?? null;
   }
 
   protected override onLoad(): void {
