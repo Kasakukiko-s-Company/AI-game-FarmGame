@@ -22,6 +22,17 @@ export interface TillTileResult {
   readonly farm: FarmState;
 }
 
+/** Runtime farming state plus the semantic action button latch. */
+export interface TillingSession {
+  readonly farm: FarmState;
+  readonly primaryActionHeld: boolean;
+}
+
+export interface TillingUpdateResult {
+  readonly status: 'idle' | TillTileResult['status'];
+  readonly session: TillingSession;
+}
+
 /** Returns new farming state after tilling one valid empty tile. */
 export function tillTile(
   farm: FarmState,
@@ -53,6 +64,37 @@ export function tillTile(
           crop: null,
         },
       ],
+    },
+  };
+}
+
+/** Applies one frame of semantic primary-action input to the farming session. */
+export function updateTillingSession(
+  session: TillingSession,
+  primaryActionPressed: boolean,
+  target: TileCoordinate | null,
+  isFarmable: TileFarmabilityQuery,
+): TillingUpdateResult {
+  if (!primaryActionPressed) {
+    return {
+      status: 'idle',
+      session: {
+        ...session,
+        primaryActionHeld: false,
+      },
+    };
+  }
+
+  if (session.primaryActionHeld) {
+    return { status: 'idle', session };
+  }
+
+  const tilling = tillTile(session.farm, target, isFarmable);
+  return {
+    status: tilling.status,
+    session: {
+      farm: tilling.farm,
+      primaryActionHeld: true,
     },
   };
 }

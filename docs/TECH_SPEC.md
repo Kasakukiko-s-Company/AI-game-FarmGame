@@ -179,8 +179,20 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 - `tillTile(farm, target, isFarmable)` 是公开命令 seam；world 的可耕作性通过查询函数注入，farming 不直接读取 TiledMap 或 `maps.json`。
 - 成功结果为 `tilled`，创建 `isTilled=true`、尚未浇水且没有作物的地块；输入状态不被修改。
 - 已存在的同坐标返回 `already_tilled`，不可耕作或缺失目标返回 `not_farmable`；两种结果都保持原状态，不抛出正常玩法错误。
-- 阶段 5B 才负责锄头语义输入和真实地图适配，阶段 5C 才负责已耕地视觉；5A 不修改场景。
+- 阶段 5B 负责锄头语义输入和真实地图适配，阶段 5C 才负责已耕地视觉；5A 不修改场景。
 - 阶段 5A 已通过 Creator 导入和浏览器回归；首次预览出现的 Box2D 外部缓存加载失败在资源重建后通过强制刷新恢复，不属于 farming 代码错误。
+
+## Tilling Input and Tiled Adapter Slice
+
+阶段 5B 把阶段 5A 规则连接到真实输入和地图，但不绘制土地：
+
+- `KeyboardInputBridge` 仅把 `KeyCode.SPACE` 翻译为 `InputSnapshot.primaryAction`；farming 不依赖键码，后续微信动作按钮可输出同一语义。
+- `PlayerController.getInputSnapshot()` 只公开平台无关的输入快照，让同节点玩法组件复用现有输入服务。
+- `updateTillingSession(session, primaryActionPressed, target, isFarmable)` 保存动作键门闩；只有松开到按下的边沿执行耕地，持续按住返回 `idle`。
+- `createTiledFarmabilityMap` 要求 Tiled 地图宽高和瓦片尺寸与选定 `MapDefinition` 完全一致，再把 JSON 可耕作矩形与 Tiled 顶部原点 `Blocking` 行查询组合为底部原点领域查询。
+- `TiledTillingController` 位于 Player 节点，读取 Player 最后朝向和 World 变换，选择正前方一格并更新内存中的 `FarmState`；预览重启后状态清空，持久化留到存档阶段。
+- 当前 `primaryAction` 暂时等同于使用默认锄头；快捷栏与选中工具路由留到背包阶段。蓝色指针框仍只调试屏幕坐标，阶段 5C 才投影已耕地视觉。
+- 开发期每次有效动作按下在 Console 记录 `tilled`、`already_tilled` 或 `not_farmable`，用于阶段 5B 无视觉切片验收。
 
 ## Tiled Import Smoke Baseline
 

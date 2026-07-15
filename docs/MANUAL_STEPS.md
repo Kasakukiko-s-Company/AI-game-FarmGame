@@ -8,7 +8,67 @@
 
 阶段 2 已完成。代码、自动化测试、Cocos Creator 3.8.8 脚本导入、组件绑定和浏览器预览均已通过验收。
 
-阶段 3A、阶段 3B、阶段 3C、阶段 4A～4D 以及阶段 5A 均已完成。当前不进入下一子任务，等待明确指令。
+阶段 3A、阶段 3B、阶段 3C、阶段 4A～4D、阶段 5A 和阶段 5B 均已完成。当前不进入下一子任务，等待明确指令。
+
+## 阶段 5B：锄头输入与真实地图适配（已完成）
+
+本阶段按空格键对 Player 黄色朝向框所在瓦片执行锄地。它只更新内存状态并输出 Console 日志，不改变草地图块外观；土地视觉属于阶段 5C。
+
+Creator 3.8.8 已自动生成 `TiledTillingController.ts.meta`，importer 为 `typescript`、imported 为 `true`，UUID 为 `73dbea20-def2-4f48-ba96-cb23e0278a47`。不要手工创建或编辑 `.meta`。
+
+### A. 确认脚本导入
+
+1. 回到已经打开的 Cocos Creator 3.8.8；等待资源刷新完成。
+2. 在左下角资源管理器依次展开 `assets → scripts → farming`。
+3. 确认其中出现 `FarmState` 和新脚本 `TiledTillingController`。
+4. 查看底部 Console，确认没有新的红色编译错误。
+
+### B. 把组件添加到 Player
+
+1. 在左上角层级管理器展开 `Main → Canvas`，单击 `Player` 节点。
+2. 在右侧属性检查器滚动到最下方，点击 **添加组件**。
+3. 在搜索框输入 `TiledTillingController`，单击搜索结果添加组件。
+4. 添加后应看到四个属性：`Tiled Map`、`Maps Data`、`Map Id`、`Blocking Layer Name`。
+5. 从层级管理器把 `Canvas → World` 节点拖到 `Tiled Map` 属性框。
+6. 在资源管理器展开 `assets → data`，把 `maps`（源文件为 `maps.json`）拖到 `Maps Data` 属性框。
+7. 确认 `Map Id` 保持 `mvp_farm`。
+8. 确认 `Blocking Layer Name` 保持 `Blocking`，大小写必须一致。
+9. 按 `Ctrl+S` 保存 `Main.scene`。
+
+不要把组件添加到 World、Camera 或 InteractionDebug；它必须与 `PlayerController`、`KeyboardInputBridge` 位于同一个 Player 节点。
+
+### C. 浏览器预览验收
+
+1. 清空 Creator Console，点击顶部三角形预览按钮。
+2. 使用 WASD 或方向键移动。空格键现在是“使用默认锄头”。
+3. 移动到地图中央偏左下的可耕作区域，使黄色框位于允许耕作的瓦片，然后短按一次空格。
+4. 打开浏览器开发者工具的 Console，应出现类似：`[TiledTillingController] tilled tile (14, 14).`，实际坐标可以不同。外部浏览器预览的运行时日志不保证转发到 Creator 底部 Console。
+5. 松开空格，不移动黄色框，再按一次空格；应出现相同坐标的 `already_tilled`。
+6. 按住空格并改变移动方向，松开前不应连续产生新的耕地日志；松开后再次短按才执行下一次动作。
+7. 面向石墙、地图外方向或可耕作矩形之外的草地按空格，应出现 `not_farmable`，且不能产生 `tilled`。
+8. 草地画面不变是本阶段预期结果；不要因此添加 Sprite、图块层或手写场景数据。
+9. 回归 WASD、方向键、石墙碰撞、相机边界、黄色朝向框和蓝色点击框。
+10. 返回 Creator，确认没有新的红色错误、重复警告或“缺少 World/maps.json/Blocking”警告。若“打开日志文件”提示 `temp/logs/project.log` 不存在，使用浏览器 Console 验收运行时日志，不要手工创建该文件。
+
+验收结果：Player 组件及 `World`、`maps.json`、`mvp_farm`、`Blocking` 绑定已保存；首次空格、重复空格和区域外操作分别得到 `tilled`、`already_tilled`、`not_farmable`。清理临时文件后曾出现的 `project.log` EPERM 在完整重启 Creator 后消失。
+
+完成后回复：
+
+```text
+TiledTillingController 导入：成功/失败
+Player 组件添加：成功/失败
+Tiled Map：World/未绑定
+Maps Data：maps/未绑定
+首次空格：tilled/其他完整日志
+同格再次空格：already_tilled/其他完整日志
+按住空格不重复：正常/异常
+石墙或区域外：not_farmable/其他完整日志
+WASD 和方向键：正常/异常
+石墙碰撞：正常/异常
+相机与地图边界：正常/异常
+黄色/蓝色调试框：正常/异常
+Console 新错误或重复警告：无/完整内容
+```
 
 ## 阶段 5A：纯耕地状态规则（已完成）
 

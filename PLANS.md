@@ -311,7 +311,7 @@ references/
 
 ## 阶段 5：耕地
 
-状态：`[~]`，阶段 5A“纯耕地状态规则”已完成；锄头输入、真实地图适配和土地视觉尚未开始。
+状态：`[~]`，阶段 5A“纯耕地状态规则”和阶段 5B“锄头输入与真实地图适配”已完成；阶段 5C 土地视觉尚未开始。
 
 范围：锄头选择、土地状态从普通到已耕作、重复操作幂等、视觉反馈。只修改允许耕作的瓦片。
 
@@ -336,7 +336,24 @@ references/
 - 清空 Creator Console 后旧的 `msg not exist!` 未再次出现；没有其他新错误或重复警告。
 - WASD、方向键、石墙碰撞、相机与地图边界、黄色/蓝色调试框回归均正常。
 
-阶段 5A 已完成。下一子任务只在收到明确指令后开始；当前不进入锄头输入、真实地图适配或已耕地视觉。
+阶段 5A 已完成。
+
+### 阶段 5B：锄头输入与真实地图适配（已完成）
+
+2026-07-15 已完成：
+
+- `KeyboardInputBridge` 将空格键转换为平台无关的 `primaryAction`；玩法代码仍不读取物理键码。
+- `updateTillingSession` 只在动作键由松开变为按下时执行一次；持续按住不会跨瓦片重复耕作，松开后可再次触发。
+- `createTiledFarmabilityMap` 将 `maps.json` 的 `farmableArea`、真实 Tiled 尺寸和 `Blocking` 图层组合成阶段 5A 所需的查询，并集中处理 Tiled 顶部行号与领域底部原点坐标的转换。
+- 地图尺寸或瓦片尺寸与 JSON 配置不一致时拒绝建立查询，避免静默错位。
+- 新增 `TiledTillingController` Creator 组件：使用 Player 的世界位置与最后朝向选择黄色框对应瓦片，调用纯耕地状态规则，并在开发期 Console 输出 `tilled`、`already_tilled` 或 `not_farmable`。
+- 当前默认锄头已选中；真正的快捷栏工具选择留到背包阶段。蓝色鼠标框仍只用于坐标调试，阶段 5C 才绘制土地变化。
+- 四个新增行为测试和 Creator 3.8.8 类型检查已通过；Creator 已自动生成新组件 `.meta`，不手写场景序列化数据。
+- Creator 场景已把组件添加到 Player，并绑定 `World`、`maps.json`、`mvp_farm` 与 `Blocking`。
+- 浏览器运行时 Console 已验证可耕格首次空格输出 `tilled`、同格再次输出 `already_tilled`，区域外输出 `not_farmable`。
+- Creator 曾因清理临时文件无法打开 `temp/logs/project.log`；完整重启后 EPERM 消失。浏览器预览运行时日志以浏览器开发者工具为准，Creator 底部 Console 不保证转发。
+
+阶段 5B 已完成。下一子任务只在收到明确指令后开始；当前不进入阶段 5C 土地视觉。
 
 ## 阶段 6：播种与作物成长
 

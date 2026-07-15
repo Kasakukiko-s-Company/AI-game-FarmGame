@@ -52,7 +52,7 @@
     },
     "autoReleaseAssets": false,
     "_globals": {
-      "__id__": 33
+      "__id__": 34
     },
     "_id": "8df5282c-fd86-4d0b-ad4d-ebdd3718434d"
   },
@@ -75,19 +75,19 @@
         "__id__": 6
       },
       {
-        "__id__": 26
+        "__id__": 27
       }
     ],
     "_active": true,
     "_components": [
       {
-        "__id__": 30
-      },
-      {
         "__id__": 31
       },
       {
         "__id__": 32
+      },
+      {
+        "__id__": 33
       }
     ],
     "_prefab": null,
@@ -138,7 +138,7 @@
         "__id__": 5
       },
       {
-        "__id__": 25
+        "__id__": 26
       }
     ],
     "_prefab": null,
@@ -263,6 +263,9 @@
       },
       {
         "__id__": 12
+      },
+      {
+        "__id__": 25
       }
     ],
     "_prefab": null,
@@ -789,6 +792,27 @@
     "_id": "1ePc2Gt3BLj4WzzwqmB3tV"
   },
   {
+    "__type__": "73dbeog3vJPSLqWyyPgJ4pH",
+    "_name": "",
+    "_objFlags": 0,
+    "__editorExtras__": {},
+    "node": {
+      "__id__": 6
+    },
+    "_enabled": true,
+    "__prefab": null,
+    "tiledMap": {
+      "__id__": 13
+    },
+    "mapsData": {
+      "__uuid__": "c7e4eeca-f3a1-4b5f-9d2b-4daa454220ae",
+      "__expectedType__": "cc.JsonAsset"
+    },
+    "mapId": "mvp_farm",
+    "blockingLayerName": "Blocking",
+    "_id": "ecA3IJ4i5HhbCofC8HxKfQ"
+  },
+  {
     "__type__": "7063dv/ib5IqpAT4Ug0gyfg",
     "_name": "",
     "_objFlags": 0,
@@ -815,13 +839,13 @@
     "_active": true,
     "_components": [
       {
-        "__id__": 27
-      },
-      {
         "__id__": 28
       },
       {
         "__id__": 29
+      },
+      {
+        "__id__": 30
       }
     ],
     "_prefab": null,
@@ -860,7 +884,7 @@
     "_objFlags": 0,
     "__editorExtras__": {},
     "node": {
-      "__id__": 26
+      "__id__": 27
     },
     "_enabled": true,
     "__prefab": null,
@@ -882,7 +906,7 @@
     "_objFlags": 0,
     "__editorExtras__": {},
     "node": {
-      "__id__": 26
+      "__id__": 27
     },
     "_enabled": true,
     "__prefab": null,
@@ -922,7 +946,7 @@
     "_objFlags": 0,
     "__editorExtras__": {},
     "node": {
-      "__id__": 26
+      "__id__": 27
     },
     "_enabled": true,
     "__prefab": null,
@@ -933,7 +957,7 @@
       "__id__": 13
     },
     "screenTileMapper": {
-      "__id__": 25
+      "__id__": 26
     },
     "_id": "e5JmXd75BIwL5eEd/GxL0n"
   },
@@ -1008,28 +1032,28 @@
   {
     "__type__": "cc.SceneGlobals",
     "ambient": {
-      "__id__": 34
-    },
-    "shadows": {
       "__id__": 35
     },
-    "_skybox": {
+    "shadows": {
       "__id__": 36
     },
-    "fog": {
+    "_skybox": {
       "__id__": 37
     },
-    "octree": {
+    "fog": {
       "__id__": 38
     },
-    "skin": {
+    "octree": {
       "__id__": 39
     },
-    "lightProbeInfo": {
+    "skin": {
       "__id__": 40
     },
-    "postSettings": {
+    "lightProbeInfo": {
       "__id__": 41
+    },
+    "postSettings": {
+      "__id__": 42
     },
     "bakedWithStationaryMainLight": false,
     "bakedWithHighpLightmap": false

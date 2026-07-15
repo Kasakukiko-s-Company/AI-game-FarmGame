@@ -47,11 +47,12 @@ export class KeyboardInputBridge extends Component implements IInputService {
       ...NEUTRAL_INPUT,
       moveX: Number(right) - Number(left),
       moveY: Number(up) - Number(down),
+      primaryAction: this.isHeld(KeyCode.SPACE),
     };
   }
 
   private readonly onKeyDown = (event: EventKeyboard): void => {
-    if (this.isMovementKey(event.keyCode)) {
+    if (this.isSupportedKey(event.keyCode)) {
       this.heldKeys.add(event.keyCode);
     }
   };
@@ -69,7 +70,7 @@ export class KeyboardInputBridge extends Component implements IInputService {
     return this.heldKeys.has(keyCode);
   }
 
-  private isMovementKey(keyCode: KeyCode): boolean {
+  private isSupportedKey(keyCode: KeyCode): boolean {
     return keyCode === KeyCode.KEY_A ||
       keyCode === KeyCode.KEY_D ||
       keyCode === KeyCode.KEY_W ||
@@ -77,6 +78,7 @@ export class KeyboardInputBridge extends Component implements IInputService {
       keyCode === KeyCode.ARROW_LEFT ||
       keyCode === KeyCode.ARROW_RIGHT ||
       keyCode === KeyCode.ARROW_UP ||
-      keyCode === KeyCode.ARROW_DOWN;
+      keyCode === KeyCode.ARROW_DOWN ||
+      keyCode === KeyCode.SPACE;
   }
 }

@@ -1,3 +1,4 @@
+import type { MapDefinition } from '../data/GameDataTypes';
 import type { TileCoordinate } from './TileInteraction';
 
 export interface TileRectangle {
@@ -11,6 +12,41 @@ export interface TileFarmabilityMap {
   readonly height: number;
   readonly farmableArea: TileRectangle;
   isBlocked(tileX: number, tileY: number): boolean;
+}
+
+export interface TiledGridGeometry {
+  readonly width: number;
+  readonly height: number;
+  readonly tileWidth: number;
+  readonly tileHeight: number;
+}
+
+export type TiledBlockingQuery = (tileX: number, tiledRow: number) => boolean;
+
+/** Combines JSON farm bounds with a Tiled top-down blocking-layer query. */
+export function createTiledFarmabilityMap(
+  definition: MapDefinition,
+  geometry: TiledGridGeometry,
+  isBlockingTile: TiledBlockingQuery,
+): TileFarmabilityMap | null {
+  if (
+    geometry.width !== definition.widthTiles ||
+    geometry.height !== definition.heightTiles ||
+    geometry.tileWidth !== definition.tileSizePixels ||
+    geometry.tileHeight !== definition.tileSizePixels
+  ) {
+    return null;
+  }
+
+  return {
+    width: geometry.width,
+    height: geometry.height,
+    farmableArea: definition.farmableArea,
+    isBlocked: (tileX, tileY) => isBlockingTile(
+      tileX,
+      geometry.height - 1 - tileY,
+    ),
+  };
 }
 
 /** Returns whether a target tile is inside the configured area and not blocked. */

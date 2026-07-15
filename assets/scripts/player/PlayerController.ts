@@ -1,5 +1,9 @@
 import { _decorator, Component } from 'cc';
-import type { IInputService } from '../platform/PlatformContracts';
+import {
+  NEUTRAL_INPUT,
+  type IInputService,
+  type InputSnapshot,
+} from '../platform/PlatformContracts';
 import {
   calculatePlayerMovement,
   FacingDirection,
@@ -52,6 +56,11 @@ export class PlayerController extends Component {
     }
   }
 
+  /** Exposes the shared semantic snapshot without leaking physical key codes. */
+  public getInputSnapshot(): InputSnapshot {
+    return this.inputService?.getSnapshot() ?? NEUTRAL_INPUT;
+  }
+
   public setCollisionService(collisionService: IPlayerCollisionService): void {
     this.collisionService = collisionService;
   }
@@ -67,7 +76,7 @@ export class PlayerController extends Component {
       return;
     }
 
-    const input = this.inputService.getSnapshot();
+    const input = this.getInputSnapshot();
     const step = calculatePlayerMovement(
       input.moveX,
       input.moveY,
