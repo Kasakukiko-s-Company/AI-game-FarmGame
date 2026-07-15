@@ -41,3 +41,18 @@ test('maps E to the semantic secondary action used for planting', async () => {
     'KeyboardInputBridge must retain KEY_E key-down events.',
   );
 });
+
+test('maps F to the semantic watering action', async () => {
+  const source = await readFile(BRIDGE_SOURCE_URL, 'utf8');
+
+  assert.match(
+    source,
+    /wateringAction:\s*this\.isHeld\(KeyCode\.KEY_F\)/,
+    'KeyboardInputBridge must expose F through InputSnapshot.wateringAction.',
+  );
+  assert.match(
+    source,
+    /keyCode\s*===\s*KeyCode\.KEY_F/,
+    'KeyboardInputBridge must retain KEY_F key-down events.',
+  );
+});

@@ -39,3 +39,14 @@ test('planting input is edge-triggered and gives simultaneous hoe input preceden
   assert.match(source, /secondaryActionHeld/);
   assert.match(source, /if\s*\(snapshot\.primaryAction\)\s*\{[\s\S]*?return;/);
 });
+
+test('planting reads the current day from the authoritative farm state owner', async () => {
+  const [plantingSource, tillingSource] = await Promise.all([
+    readFile(PLANTING_CONTROLLER_URL, 'utf8'),
+    readFile(TILLING_CONTROLLER_URL, 'utf8'),
+  ]);
+
+  assert.doesNotMatch(plantingSource, /public\s+currentDay\s*=/);
+  assert.match(plantingSource, /\.plantFacingCrop\(\s*this\.seeds,\s*cropsFile\.crops/);
+  assert.match(tillingSource, /plantCrop\([\s\S]*?this\.currentDayValue,/);
+});

@@ -22,6 +22,11 @@ import {
   type TillingUpdateResult,
 } from './FarmState';
 import {
+  waterTile,
+  type FarmDayState,
+  type WaterTileResult,
+} from './FarmDayCycle';
+import {
   createTiledFarmabilityMap,
   isTileFarmable,
   type TileFarmabilityMap,
@@ -48,6 +53,10 @@ interface TillingSetup {
 }
 
 export interface FacingPlantCropResult extends PlantCropResult {
+  readonly target: TileCoordinate | null;
+}
+
+export interface FacingWaterTileResult extends WaterTileResult {
   readonly target: TileCoordinate | null;
 }
 
@@ -95,16 +104,28 @@ export class TiledTillingController extends Component {
   @property({ tooltip: 'Name of the invisible Tiled tile layer used for blocking.' })
   public blockingLayerName = 'Blocking';
 
+  @property({ min: 1, step: 1, tooltip: 'Initial positive game day owned by this farm state.' })
+  public startingDay = 1;
+
   private controller: PlayerController | null = null;
   private session: TillingSession = {
     farm: { mapId: 'mvp_farm', tiles: [] },
     primaryActionHeld: false,
   };
   private actionStatus: TillingUpdateResult['status'] = 'idle';
+  private currentDayValue = 1;
   private didWarnMissingSetup = false;
 
   public get farmState(): FarmState {
     return this.session.farm;
+  }
+
+  /** Exposes the single authoritative day and farm snapshot to read-only views. */
+  public get farmDayState(): FarmDayState {
+    return {
+      currentDay: this.currentDayValue,
+      farm: this.session.farm,
+    };
   }
 
   public get lastActionStatus(): TillingUpdateResult['status'] {
@@ -119,7 +140,6 @@ export class TiledTillingController extends Component {
   /** Applies planting to this component's authoritative FarmState. */
   public plantFacingCrop(
     seeds: SeedStack,
-    currentDay: number,
     crops: ReadonlyArray<CropDefinition>,
   ): FacingPlantCropResult | null {
     const setup = this.getSetup();
@@ -132,7 +152,7 @@ export class TiledTillingController extends Component {
       this.session.farm,
       target,
       seeds,
-      currentDay,
+      this.currentDayValue,
       crops,
     );
     this.session = {
@@ -142,7 +162,26 @@ export class TiledTillingController extends Component {
     return { ...result, target };
   }
 
+  /** Applies watering to the facing tile through the authoritative day state. */
+  public waterFacingTile(): FacingWaterTileResult | null {
+    const setup = this.getSetup();
+    if (setup === null) {
+      return null;
+    }
+
+    const target = this.getFacingTarget(setup);
+    const result = waterTile(this.farmDayState, target);
+    this.session = {
+      ...this.session,
+      farm: result.state.farm,
+    };
+    return { ...result, target };
+  }
+
   protected override onLoad(): void {
+    this.currentDayValue = Number.isInteger(this.startingDay) && this.startingDay > 0
+      ? this.startingDay
+      : 1;
     this.session = {
       farm: { mapId: this.mapId, tiles: [] },
       primaryActionHeld: false,

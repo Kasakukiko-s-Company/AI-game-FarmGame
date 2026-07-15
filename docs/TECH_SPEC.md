@@ -272,23 +272,37 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 
 ## Farming Rules
 
-建议地块状态：
+当前地块状态：
 
 - `isTilled`
 - `wateredOnDay`，使用天数而不是依赖场景颜色判断。
-- 可选 `cropInstanceId` 或内嵌作物状态引用。
+- 内嵌 `CropState | null`。
 
-建议作物状态：
+当前作物状态：
 
 - `cropId`
-- `tile`
 - `plantedOnDay`
 - `growthProgress`
 - `stageIndex`
 - `lastGrowthDay`
 
-`EndDay` 是唯一成长结算入口，必须防止同一天重复结算。
-只有 `wateredOnDay` 等于结算日的作物获得一天成长；未浇水作物保持原进度且不会枯死。
+阶段 7A 以 `FarmDayState` 把 `currentDay` 和 `FarmState` 放在同一个纯规则 interface 后面：
+
+- `waterTile(state, target)` 只接受已经进入农田状态的地块；首次浇水写入当前日，同日重复或未耕目标保持输入状态引用。
+- `advanceFarmDay(state, crops)` 是唯一单日成长结算入口。成功调用只把日期加一；`lastGrowthDay >= currentDay` 的作物不会重复结算。
+- `requiresWater=true` 的作物只有 `wateredOnDay === currentDay` 时增加一天进度；未浇水时只记录已结算日，进度不变且不会枯死。不需水作物不依赖浇水标记。
+- 成长进度封顶于 `growthStages` 总天数，视觉阶段封顶于最后一阶；旧 `wateredOnDay` 不清空，新日期通过不相等语义自然视为未浇水。
+- 任一持久化作物缺少对应 `CropDefinition` 时返回 `invalid_crop`，整次操作保持原状态；非法日期属于损坏状态并抛出 `RangeError`。
+- 阶段 7A 不接输入、Tiled、Cocos 场景、湿土视觉、睡觉点或存档。阶段 7B/7C adapter 将只穿过以上两个 interface 改变权威状态。
+
+阶段 7B 通过现有状态拥有者接入浇水输入和只读湿土表现：
+
+- `InputSnapshot.wateringAction` 是独立于物理设备的浇水动作；PC 的 `KeyboardInputBridge` 暂映射 F，未来微信触控按钮输出同一语义。
+- `TiledTillingController.farmDayState` 是运行时唯一日期/农田快照；`waterFacingTile()` 选择 Player 正前方一格并调用纯 `waterTile`。播种也读取该拥有者的日期，adapter 不复制 `FarmState` 或 `currentDay`。
+- `TiledWateringController` 只处理动作按下沿和日志，持续按住不重复。空格、E、F 同时出现时按锄地 > 播种 > 浇水处理，避免一次输入写入多个工具结果。
+- `createWateredSoilPatches` 只返回当前日浇水且位于有限地图内的格子；旧日期标记自然显示为干土，非法日期安全返回空投影。
+- `TilledSoilView` 依次绘制可耕地、干燥已耕地和当前日湿土；它仍只读权威状态，层级继续位于作物和 Player 下方。
+- 阶段 7B 不推进日期或成长。睡觉、`advanceFarmDay` adapter、次日湿土失效与成长视觉回归属于阶段 7C。
 
 ## Event Examples
 

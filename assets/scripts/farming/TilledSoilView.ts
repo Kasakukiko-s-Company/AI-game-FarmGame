@@ -11,12 +11,14 @@ import {
 import type { TileGridGeometry } from '../world/TileInteraction';
 import type { TileRectangleData } from '../data/GameDataTypes';
 import type { FarmState } from './FarmState';
+import type { FarmDayState } from './FarmDayCycle';
 import { TiledTillingController } from './TiledTillingController';
 import {
   createFarmableGroundPatches,
   createTilledSoilPatches,
   type TilledSoilPatch,
 } from './TilledSoilProjection';
+import { createWateredSoilPatches } from './WateredSoilProjection';
 
 const { ccclass, property, requireComponent } = _decorator;
 
@@ -25,6 +27,10 @@ const FARMABLE_OUTLINE_COLOR = new Color(119, 121, 70, 255);
 const SOIL_FILL_COLOR = new Color(139, 92, 55, 255);
 const SOIL_OUTLINE_COLOR = new Color(91, 58, 38, 255);
 const FURROW_COLOR = new Color(111, 70, 42, 255);
+const WET_SOIL_FILL_COLOR = new Color(85, 72, 63, 255);
+const WET_SOIL_OUTLINE_COLOR = new Color(55, 50, 46, 255);
+const WET_FURROW_COLOR = new Color(64, 86, 82, 255);
+const WET_HIGHLIGHT_COLOR = new Color(125, 137, 123, 210);
 const PATCH_INSET = 1;
 
 interface SoilViewSetup {
@@ -54,15 +60,18 @@ export class TilledSoilView extends Component {
   public tiledMap: TiledMap | null = null;
 
   private drawnFarm: FarmState | null = null;
+  private drawnDay = 0;
   private didWarnMissingSetup = false;
 
   protected override onEnable(): void {
     this.drawnFarm = null;
+    this.drawnDay = 0;
   }
 
   protected override onDisable(): void {
     this.getComponent(Graphics)?.clear();
     this.drawnFarm = null;
+    this.drawnDay = 0;
     this.didWarnMissingSetup = false;
   }
 
@@ -71,26 +80,29 @@ export class TilledSoilView extends Component {
     if (setup === null) {
       this.getComponent(Graphics)?.clear();
       this.drawnFarm = null;
+      this.drawnDay = 0;
       this.warnMissingSetupOnce();
       return;
     }
 
     this.didWarnMissingSetup = false;
-    const farm = setup.source.farmState;
-    if (farm === this.drawnFarm) {
+    const state = setup.source.farmDayState;
+    if (state.farm === this.drawnFarm && state.currentDay === this.drawnDay) {
       return;
     }
 
-    this.drawnFarm = farm;
-    this.redraw(setup, farm);
+    this.drawnFarm = state.farm;
+    this.drawnDay = state.currentDay;
+    this.redraw(setup, state);
   }
 
-  private redraw(setup: SoilViewSetup, farm: FarmState): void {
+  private redraw(setup: SoilViewSetup, state: FarmDayState): void {
     const farmablePatches = createFarmableGroundPatches(
       setup.farmableArea,
       setup.grid,
     );
-    const tilledPatches = createTilledSoilPatches(farm, setup.grid);
+    const tilledPatches = createTilledSoilPatches(state.farm, setup.grid);
+    const wateredPatches = createWateredSoilPatches(state, setup.grid);
     setup.graphics.clear();
 
     for (const patch of farmablePatches) {
@@ -98,6 +110,9 @@ export class TilledSoilView extends Component {
     }
     for (const patch of tilledPatches) {
       this.drawTilledPatch(setup, patch);
+    }
+    for (const patch of wateredPatches) {
+      this.drawWateredPatch(setup, patch);
     }
   }
 
@@ -157,6 +172,32 @@ export class TilledSoilView extends Component {
       setup.graphics.moveTo(rect.left + 5, furrowY);
       setup.graphics.lineTo(rect.left + rect.width - 5, furrowY);
     }
+    setup.graphics.stroke();
+  }
+
+  private drawWateredPatch(setup: SoilViewSetup, patch: TilledSoilPatch): void {
+    const rect = this.getPatchRect(setup, patch);
+
+    setup.graphics.fillColor = WET_SOIL_FILL_COLOR;
+    setup.graphics.rect(rect.left, rect.bottom, rect.width, rect.height);
+    setup.graphics.fill();
+
+    setup.graphics.strokeColor = WET_SOIL_OUTLINE_COLOR;
+    setup.graphics.lineWidth = 1;
+    setup.graphics.rect(rect.left, rect.bottom, rect.width, rect.height);
+    setup.graphics.stroke();
+
+    setup.graphics.strokeColor = WET_FURROW_COLOR;
+    for (const ratio of [0.3, 0.5, 0.7]) {
+      const furrowY = rect.bottom + rect.height * ratio;
+      setup.graphics.moveTo(rect.left + 5, furrowY);
+      setup.graphics.lineTo(rect.left + rect.width - 5, furrowY);
+    }
+    setup.graphics.stroke();
+
+    setup.graphics.strokeColor = WET_HIGHLIGHT_COLOR;
+    setup.graphics.moveTo(rect.left + 6, rect.bottom + rect.height - 5);
+    setup.graphics.lineTo(rect.left + 12, rect.bottom + rect.height - 5);
     setup.graphics.stroke();
   }
 

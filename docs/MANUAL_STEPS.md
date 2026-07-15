@@ -8,7 +8,121 @@
 
 阶段 2 已完成。代码、自动化测试、Cocos Creator 3.8.8 脚本导入、组件绑定和浏览器预览均已通过验收。
 
-阶段 3A、阶段 3B、阶段 3C、阶段 4A～4D、阶段 5A～5C 和阶段 6A～6C 均已完成。当前等待建立阶段 6C Git 基线；阶段 7 只在收到明确指令后开始。
+阶段 3A、阶段 3B、阶段 3C、阶段 4A～4D、阶段 5A～5C、阶段 6A～6C 和阶段 7A～7B 均已完成。当前等待建立阶段 7B Git 基线；阶段 7C 只在收到明确指令后开始。
+
+## 阶段 7B：浇水输入与湿土视觉（已完成）
+
+本切片用 F 键浇灌 Player 正前方的已耕地，并在现有 `TilledSoil` 节点上显示原创冷调深棕湿土。它不推进日期、不让作物成长，也不加入睡觉点、水壶容量、工具栏或存档。
+
+### A. 刷新并确认新脚本
+
+1. 停止浏览器预览，回到 Cocos Creator 3.8.8。
+2. 点击资源管理器右上角圆形 **刷新** 按钮，等待脚本编译和资源导入完成。
+3. 展开 `assets → scripts → farming`，确认出现 `TiledWateringController` 和 `WateredSoilProjection`。
+4. `WateredSoilProjection` 是纯 TypeScript 投影规则，不是组件；不要拖入场景，也不要在“添加组件”中搜索它。
+5. 确认两个脚本的 `.meta` 均由 Creator 自动生成；不要手工创建或复制 UUID。
+6. 查看底部 Console，确认没有新的红色脚本错误；TMX 1.10 已知提示可保留。
+
+### B. 给 Player 添加浇水组件
+
+1. 在层级管理器展开 `Main → Canvas`，单击 `Player` 节点。
+2. 在右侧属性检查器滚动到底部，点击 **添加组件**。
+3. 在搜索框输入 `TiledWateringController`。
+4. 选择同名脚本组件并添加到 Player。
+5. 新组件没有需要拖拽的属性；它会复用 Player 上已有的 `PlayerController` 和 `TiledTillingController`。
+6. 找到 Player 上已有的 `TiledTillingController`，确认新出现的 **Starting Day** 为 `1`。不要修改 World、Maps Data、Map Id 或 Blocking Layer Name 的既有绑定。
+7. `TiledPlantingController` 不再显示独立的 Current Day 属于正常结果；播种和浇水现在读取同一个权威日期。
+8. 不要创建新的湿土节点。已有 `TilledSoil → TilledSoilView` 会自动读取当天湿土投影。
+9. 按 `Ctrl+S` 保存 `Main.scene`，等待右下角导入和编译任务结束。
+
+### C. 浏览器预览验收
+
+1. 点击顶部预览按钮，打开浏览器后单击游戏画面取得键盘焦点。
+2. 打开浏览器开发者工具 Console；运行时动作日志通常显示在浏览器 Console，而不是 Creator 底部 Console。
+3. 面向浅黄绿色药圃格，短按一次空格把它锄成干燥深棕色，然后松开空格。
+4. 保持面向该已耕格，短按一次 F。应出现 `[TiledWateringController] watered tile (...)`，土地变成更深、略带冷色和浅色水光的湿土。
+5. 松开 F 后在同一格再次短按 F。应记录 `already_watered`，湿土不重复叠加。
+6. 面向未耕药圃或外围草地短按 F。应记录 `not_tilled`，地面外观不改变。
+7. 按住 F 并移动经过多个格子，只应在首次按下时执行一次；松开后再次按 F 才能执行下一次。
+8. 在一个未耕药圃格同时按空格和 F，应只锄地、不立刻变湿；松开后单独按 F 才浇水。
+9. 同时按 E 和 F 时应只执行播种，不应同时出现浇水日志；动作优先级为锄地 > 播种 > 浇水。
+10. 验证幼苗仍显示在土块上方，Player 和黄色/蓝色调试框层级不被湿土遮挡。
+11. 验证 WASD、方向键、石墙碰撞、相机边界、横屏尺寸、空格锄地、E 播种和三粒种子消耗仍正常。
+12. 当前日期不会推进，作物不会成长，湿土在本次预览的第 1 天保持可见都属于阶段 7B 正常结果。重新打开预览会重置内存状态。
+13. 返回 Creator，确认除 TMX 1.10 已知提示外没有新的项目错误或重复警告。
+
+完成后回复：
+
+```text
+TiledWateringController / WateredSoilProjection 导入：成功/失败
+两个新 .meta：自动生成/未生成
+Player 添加 TiledWateringController：成功/失败
+Starting Day：1/其他
+首次 F 浇水日志与湿土：正常/异常
+同格再次 F：already_watered 且不叠加/异常
+未耕地 F：not_tilled 且不变色/异常
+按住 F 不重复：正常/异常
+空格/E/F 优先级：正常/异常
+移动、碰撞、相机、锄地、播种和视觉层级回归：正常/异常
+日期与作物成长：未变化（阶段 7B 正常）/异常
+除 TMX 1.10 已知提示外的新错误：无/完整内容
+```
+
+### D. 验收记录（2026-07-15）
+
+- `TiledWateringController` 与 `WateredSoilProjection` 导入成功，两个 `.meta` 均由 Creator 3.8.8 自动生成并导入。
+- Player 已添加 `TiledWateringController`；`TiledTillingController.Starting Day=1`，场景由 Creator 保存。
+- 首次 F 返回 `watered` 并显示冷调深棕湿土；同格再次 F 返回 `already_watered` 且不叠加；未耕地返回 `not_tilled` 且不变色。
+- 按住 F 不重复，空格/E/F 优先级正常；移动、碰撞、相机、锄地、播种、幼苗和视觉层级回归正常。
+- 日期和作物成长保持不变符合阶段 7B 边界。
+- 截图中的 QoderWork/Immersive Translate 连接失败来自浏览器扩展，不属于项目；除 TMX 1.10 已知提示外没有项目新错误。
+
+## 阶段 7A：纯浇水与单日结算规则（已完成）
+
+本切片只有纯 TypeScript 规则，不添加浇水按键、湿土画面、睡觉点、日期显示、组件或场景绑定。预览画面保持阶段 6C 状态属于正常结果。
+
+### A. 导入纯规则
+
+1. 停止浏览器预览，回到 Cocos Creator 3.8.8。
+2. 点击资源管理器右上角圆形 **刷新** 按钮，等待脚本编译与资源导入完成。
+3. 展开 `assets → scripts → farming`，确认出现 `FarmDayCycle`。
+4. `FarmDayCycle` 是纯 TypeScript 规则，不是 Creator 组件；不要拖入场景，也不要在“添加组件”中搜索。
+5. 确认 `FarmDayCycle.ts.meta` 由 Creator 自动生成；不要自行创建或编辑。
+6. 查看底部 Console，确认没有新的红色脚本错误；TMX 1.10 已知提示可保留。
+
+### B. 现有玩法回归
+
+1. 不需要修改或保存 `Main.scene`；层级仍应包含 `World → TilledSoil → Crops → Player → InteractionDebug`。
+2. 点击顶部预览按钮，并点击游戏画面取得键盘焦点。
+3. 验证 WASD 和方向键、石墙碰撞、相机跟随与地图边界仍正常。
+4. 面向浅黄绿色药圃格短按空格，应正常变成深棕色已耕地；同格再次空格不叠加。
+5. 松开空格后短按 E，应正常播种幼苗；重复播种、三粒种子消耗与无种子拒绝仍正常。
+6. 黄色朝向框、蓝色点击框、已耕土和幼苗层级仍正常。
+7. 本切片尚未接入浇水和跨天，所以没有湿土变化、没有成长、日期不变化均属预期。
+8. 返回 Creator，确认没有新的红色错误或重复项目警告。
+
+完成后回复：
+
+```text
+FarmDayCycle 导入：成功/失败
+FarmDayCycle .meta：自动生成/未生成
+Main.scene 新绑定：无/其他
+WASD 和方向键：正常/异常
+石墙碰撞：正常/异常
+相机与地图边界：正常/异常
+耕地、播种和幼苗视觉：正常/异常
+黄色/蓝色调试框：正常/异常
+浇水或跨天视觉：未出现（阶段 7A 正常）/异常内容
+除 TMX 1.10 已知提示外的新错误：无/完整内容
+```
+
+### C. 验收记录（2026-07-15）
+
+- `FarmDayCycle` 导入成功，Creator 3.8.8 自动生成并导入 `.meta`；UUID 唯一。
+- `Main.scene` 没有新绑定或文件改动。
+- WASD、方向键、石墙碰撞、相机与地图边界、耕地、播种、幼苗视觉和黄色/蓝色调试框均正常。
+- 没有出现浇水或跨天视觉符合阶段 7A 的纯规则边界。
+- 除 TMX 1.10 已知提示外没有新的项目错误。
 
 ## 阶段 6C：已播种作物视觉（已完成）
 

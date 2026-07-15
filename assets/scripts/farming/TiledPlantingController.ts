@@ -25,9 +25,6 @@ export class TiledPlantingController extends Component {
   @property({ min: 0, step: 1, tooltip: 'Temporary starting seed quantity.' })
   public startingSeedQuantity = 3;
 
-  @property({ min: 1, step: 1, tooltip: 'Current game day before the time system exists.' })
-  public currentDay = 1;
-
   private controller: PlayerController | null = null;
   private stateOwner: TiledTillingController | null = null;
   private seeds: SeedStack = { itemId: 'mistleaf_seed', quantity: 3 };
@@ -87,9 +84,7 @@ export class TiledPlantingController extends Component {
       cropsFile === null ||
       this.seedItemId.trim().length === 0 ||
       !Number.isInteger(this.seeds.quantity) ||
-      this.seeds.quantity < 0 ||
-      !Number.isInteger(this.currentDay) ||
-      this.currentDay <= 0
+      this.seeds.quantity < 0
     ) {
       this.warnInvalidSetupOnce();
       return;
@@ -97,7 +92,6 @@ export class TiledPlantingController extends Component {
 
     const result = this.stateOwner.plantFacingCrop(
       this.seeds,
-      this.currentDay,
       cropsFile.crops,
     );
     if (result === null) {

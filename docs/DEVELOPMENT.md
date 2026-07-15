@@ -74,7 +74,7 @@ npm.cmd run test:world
 - `core/save`：版本化、平台无关的存档数据。
 - `data`：JSON 类型、结构解码后的跨文件校验。
 - `platform`：平台接口与适配器，不包含游戏规则。
-- `farming`：阶段 5A 已加入纯 `FarmState` 与 `tillTile` 命令规则；阶段 5B 加入动作键按下沿会话和 `TiledTillingController` 应用组件；阶段 5C 加入纯可耕/已耕矩形投影和只读 `TilledSoilView`；阶段 6A 加入纯 `plantCrop` 播种命令和配置驱动的 `calculateCropGrowthStage`；阶段 6B 通过 E 键语义、严格 `crops.json` 解码和 `TiledPlantingController` 复用唯一农田状态；阶段 6C 加入纯 `CropProjection` 和只读原创几何 `CropView`。状态、输入适配和视觉保持单向依赖。
+- `farming`：阶段 5A 已加入纯 `FarmState` 与 `tillTile` 命令规则；阶段 5B 加入动作键按下沿会话和 `TiledTillingController` 应用组件；阶段 5C 加入纯可耕/已耕矩形投影和只读 `TilledSoilView`；阶段 6A 加入纯 `plantCrop` 播种命令和配置驱动的 `calculateCropGrowthStage`；阶段 6B 通过 E 键语义、严格 `crops.json` 解码和 `TiledPlantingController` 复用唯一农田状态；阶段 6C 加入纯 `CropProjection` 和只读原创几何 `CropView`；阶段 7A 以纯 `FarmDayCycle` 统一日期、浇水与单日成长结算；阶段 7B 通过 F 键语义、`TiledWateringController` 和纯湿土投影接入唯一 `FarmDayState`。状态、输入适配和视觉保持单向依赖。
 - `inventory`、`ui`：仅建立目录，等待对应垂直切片，不提前填充空架构。
 - `player`：阶段 2 已实现纯移动规则、节点控制器和原创几何占位视图；阶段 3B 只通过接口接受 world 碰撞约束，不直接查询 Tiled。
 - `world`：阶段 3A 已完成 Tiled 导入链路；阶段 3B 已完成网格碰撞；阶段 3C 已完成有界相机；阶段 4A 已完成纯瓦片交互规则；阶段 4B 已完成只读交互目标调试视图；阶段 4C 已完成纯可耕作查询；阶段 4D 已完成屏幕/触控到瓦片的 Camera adapter 与浏览器鼠标验收，真实微信设备触控留到平台构建阶段回归。
@@ -123,5 +123,7 @@ $process.ExitCode
 - 阶段 6A 的纯播种规则和成长阶段计算已通过 7 项目标测试；它使用最小 `SeedStack` 连接未来背包，不添加 Cocos 组件、按键或作物视觉。Creator 已生成 `CropPlanting.ts.meta`，现有玩法回归无异常。
 - 阶段 6B 的 E 键语义、严格作物 JSON 解码和 `TiledPlantingController` 已接入唯一农田状态；Creator 场景绑定与播种状态/种子消耗浏览器验收均已完成。
 - 阶段 6C 的纯作物投影、原创 `Graphics` 幼苗视图、Creator 元数据和 `Crops` 场景绑定已完成；显示、去重、拒绝路径、层级、相机尺寸和现有玩法回归均已通过浏览器验收。
+- 阶段 7A 的 `FarmDayState`、`waterTile` 与 `advanceFarmDay` 已通过 8 项目标测试；Creator 已自动生成并导入 `FarmDayCycle.ts.meta`，`Main.scene` 无改动。现有移动、碰撞、相机、耕地、播种、幼苗和调试框浏览器回归均已通过。
+- 阶段 7B 的 F 键语义、单一日期/农田拥有者、按下沿浇水适配和当前日湿土投影已通过定向测试及 Creator TypeScript 检查；Creator 已生成元数据、保存 Player 组件绑定，首次/重复/非法浇水、按住去重、输入优先级、湿土和现有玩法回归均已通过浏览器验收。
 
 不要提交 AppSecret、登录凭据、二维码、`.env`、构建缓存或来源不明素材。

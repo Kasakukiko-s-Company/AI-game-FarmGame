@@ -428,11 +428,37 @@ references/
 
 ## 阶段 7：浇水、睡觉与跨天
 
-状态：`[ ]`
+状态：`[~]`，阶段 7A“纯浇水与单日结算规则”和阶段 7B“浇水输入/湿土视觉”已完成；阶段 7C 睡觉点/跨天适配尚未开始。
 
 范围：已耕地浇水、每日浇水标记、睡觉确认、日结束结算、次日重置、作物成长。
 
 完成门槛：每次跨天只结算一次；当天未浇水的作物停止成长但不枯死；重复点击睡觉不会跳过多天。
+
+2026-07-15 阶段 7A 完成记录：
+
+- 新增 `FarmDayState`，把正整数 `currentDay` 与权威 `FarmState` 配对，避免播种日、浇水日与成长结算日由多个运行时组件各自维护。
+- 新增纯 `waterTile(state, target)` interface：首次浇水返回 `watered`，同日重复返回 `already_watered`，未耕地或空目标返回 `not_tilled`；拒绝路径保持原状态引用。
+- 新增纯 `advanceFarmDay(state, crops)` interface：成功时只推进一天；需水作物仅在 `wateredOnDay` 等于结算日时成长，未浇水作物停长但不枯死，不需水作物按配置成长。
+- 每株作物通过 `lastGrowthDay` 防止同日重复结算；成熟作物的进度和阶段封顶，旧 `wateredOnDay` 保留为历史日期并在新一天自然失效。
+- 农田中存在无法匹配配置的作物时返回 `invalid_crop`，日期和全部地块保持不变，避免部分结算；非法日期明确抛出 `RangeError`。
+- 按 8 个 red-green 循环验证公开 interface；本切片不接按键、Cocos 组件、湿土视觉、睡觉点、日期 UI 或存档。
+- Creator 3.8.8 已自动生成 `FarmDayCycle.ts.meta`；importer=`typescript`、imported=`true`、UUID=`e71efb02-d8af-4d29-9200-83d97ccdb2a2`，全资源 UUID 无重复，`Main.scene` 无改动。
+- Creator 与浏览器人工验收已通过：`Main.scene` 无新绑定；移动、碰撞、相机、锄地、播种、幼苗和黄色/蓝色调试框回归正常。
+- 画面未出现浇水、湿土或跨天表现符合阶段边界；除 TMX 1.10 已知提示外没有项目新错误。
+
+2026-07-15 阶段 7B 完成记录：
+
+- `InputSnapshot.wateringAction` 提供平台无关的浇水语义；`KeyboardInputBridge` 暂以 F 键输出该动作，触控端仍通过同一 interface 预留。
+- `TiledTillingController` 继续作为唯一农田状态拥有者并公开只读 `farmDayState` 与命令式 `waterFacingTile()`；播种改为读取同一状态中的日期，不再维护第二个 `currentDay`。
+- 新增 `TiledWateringController`，只在 F 的按下沿调用状态拥有者；持续按住不重复，动作优先级保持空格锄地 > E 播种 > F 浇水。
+- 新增纯 `createWateredSoilPatches(state, grid)`，只投影 `wateredOnDay === currentDay` 且位于有限地图内的格子；非法日期不会误显示湿土。
+- 现有 `TilledSoilView` 在同一节点上覆盖原创冷调深棕湿土，不新增场景节点；作物与 Player 仍位于土地视觉上方。
+- 10 项阶段定向测试、68 项全量测试及 Creator TypeScript 5.8.2 严格检查已通过。
+- Creator 3.8.8 已自动生成并导入两个 `.meta`：`TiledWateringController` UUID=`210fa190-c333-424c-bbbd-51692c5a5a68`，`WateredSoilProjection` UUID=`32f7f074-b5a9-4f0f-b9d9-1d9db86ecae0`；全资源 UUID 无重复。
+- `Main.scene` 已由 Creator 保存 `TiledWateringController`、`Starting Day=1`，并移除旧的播种组件独立日期序列化字段。
+- 浏览器已实测首次浇水、同日重复、未耕拒绝、按住去重和空格/E/F 优先级；湿土不叠加，移动、碰撞、相机、锄地、播种和视觉层级回归正常。
+- 浏览器扩展的 QoderWork/Immersive Translate 连接提示不属于项目；除 TMX 1.10 已知提示外没有项目新错误。
+- 本切片不推进日期、不结算成长、不加入睡觉点、水壶容量、工具栏、存档或触控按钮 UI。
 
 ## 阶段 8：收获、背包与快捷栏
 
