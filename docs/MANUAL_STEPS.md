@@ -8,7 +8,81 @@
 
 阶段 2 已完成。代码、自动化测试、Cocos Creator 3.8.8 脚本导入、组件绑定和浏览器预览均已通过验收。
 
-阶段 3A、阶段 3B、阶段 3C、阶段 4A～4D、阶段 5A、阶段 5B、阶段 5C、阶段 6A 和阶段 6B 均已完成。当前等待明确指令建立阶段 6B Git 基线或进入阶段 6C。
+阶段 3A、阶段 3B、阶段 3C、阶段 4A～4D、阶段 5A～5C 和阶段 6A～6C 均已完成。当前等待建立阶段 6C Git 基线；阶段 7 只在收到明确指令后开始。
+
+## 阶段 6C：已播种作物视觉（已完成）
+
+本阶段把 `FarmState` 中已播种的格子显示为原创雾叶草幼苗占位。它只读状态，不消耗种子、不推进成长，也不加入浇水、日期或存档。
+
+### A. 刷新并确认新脚本
+
+1. 停止浏览器预览，回到 Cocos Creator 3.8.8。
+2. 点击资源管理器右上角圆形 **刷新** 按钮，等待脚本编译和资源导入完成。
+3. 展开 `assets → scripts → farming`，确认出现 `CropProjection` 和 `CropView`。
+4. `CropProjection` 是纯 TypeScript 规则，不是组件，不要把它拖入场景或在“添加组件”中搜索它。
+5. 两个脚本的 `.meta` 必须由 Creator 3.8.8 自动生成；不要自行创建或编辑。
+6. 查看底部 Console，确认没有新的红色脚本错误。
+
+### B. 创建独立 Crops 显示节点
+
+1. 在层级管理器展开 `Main → Canvas`。
+2. 右键 `Canvas`，选择 **创建空节点 / Create Empty Node**，命名为 `Crops`。
+3. 把 `Crops` 拖到 `TilledSoil` 后面、`Player` 前面。最终顺序应为：`Camera → World → TilledSoil → Crops → Player → InteractionDebug`。
+4. 选中 `Crops`，确认：
+   - Position：`X=0`、`Y=0`、`Z=0`
+   - Scale：`X=1`、`Y=1`
+   - Layer：`UI_2D`
+5. 在属性检查器点击 **添加组件**，搜索并添加 `CropView`。
+6. `Graphics` 应随 `requireComponent` 自动添加。如果没有 `cc.Graphics`，再手动添加一次；不要添加重复组件。
+7. 在 `CropView` 中完成绑定：
+   - `Source`：把层级管理器中的 `Player` 拖入，它会引用 Player 上现有的 `TiledTillingController`。
+   - `Tiled Map`：把层级管理器中的 `World` 拖入。
+8. 本组件不需要再次绑定 `crops.json`；稳定 `cropId/stageIndex` 已保存在权威 `FarmState`，本阶段只有一种原创通用几何占位表现。
+9. 按 `Ctrl+S` 保存 `Main.scene`。
+
+### C. 浏览器视觉验收
+
+1. 点击顶部预览按钮；浏览器打开后点击游戏画面取得键盘焦点。
+2. 刚开始预览时不应出现幼苗，因为内存农田状态为空。
+3. 面向浅黄绿色药圃格短按空格：该格变成深棕色，但此时仍不应出现幼苗。
+4. 松开空格，短按 E：Console 应输出 `planted`，同一深棕土块中央应立即出现一株小型深绿茎、雾绿色双叶幼苗。
+5. 不移动再次短按 E：应输出 `occupied`，幼苗不能叠加、变粗或出现第二株。
+6. 再耕种两个不同格：三株幼苗应各自居中、大小一致，与 32×32 土格对齐，剩余种子变为 0。
+7. 面向第四块已耕空地按 E：应输出 `no_seed`，该格不能出现幼苗。
+8. 面向未耕地、石墙、地图外或可耕区外按 E：不能出现幼苗。
+9. 角色经过幼苗时仍应显示在幼苗上方；黄色朝向框和蓝色点击框也应位于作物视觉上方。
+10. 移动相机并切换另一种横屏预览尺寸，幼苗应保持在原瓦片中心，不随屏幕漂移。
+11. 关闭并重新打开预览后，耕地和幼苗一起清空属于当前内存状态预期；持久化留到存档阶段。
+12. 当前只能看到第 0 阶幼苗是正常的；阶段 7 实现跨天成长后才会显示更高阶段和芽苞。
+13. 浏览器与 Creator 不应出现新的项目红色错误或重复警告；TMX 1.10 已知提示和已识别的浏览器扩展连接提示除外。
+
+完成后回复：
+
+```text
+CropProjection / CropView 导入：成功/失败
+CropView .meta：自动生成/未生成
+Crops 节点和组件：成功/失败
+层级顺序：World → TilledSoil → Crops → Player → InteractionDebug/其他
+Source：Player/未绑定
+Tiled Map：World/未绑定
+锄地后、播种前无幼苗：正常/异常
+首次 E 后出现一株幼苗：正常/异常
+同格再次 E 不叠加：正常/异常
+三株幼苗位置与大小：正常/异常
+无种子或不可播种位置不出现幼苗：正常/异常
+角色和调试框显示在幼苗上方：正常/异常
+相机移动和横屏尺寸：正常/异常
+移动、碰撞、锄地、播种日志回归：正常/异常
+除已知提示外的新错误：无/完整内容
+```
+
+### D. 验收记录（2026-07-15）
+
+- `CropProjection` 与 `CropView` 已成功导入；Creator 3.8.8 自动生成 `.meta`，importer=`typescript`、imported=`true`，UUID 分别为 `c0457e9f-49f7-4e85-ade5-eb66b2915e9d` 与 `337ff7a0-81ab-4c41-ad49-4fa26f924a26`，全资源 UUID 无重复。
+- `Main.scene` 已保存独立 `Crops` 节点和 `CropView`；顺序为 `World → TilledSoil → Crops → Player → InteractionDebug`，`Source=Player`、`Tiled Map=World`。
+- 浏览器实测锄地后播种前无幼苗、首次 E 出现一株、同格再次 E 不叠加、三株幼苗位置与大小正确；无种子或不可播种位置不出现幼苗。
+- 角色和黄色/蓝色调试框显示在幼苗上方；相机移动、横屏尺寸、移动、碰撞、锄地和播种日志回归正常。
+- 除 TMX 1.10 已知提示外，没有新的项目错误或重复警告。
 
 ## 阶段 6B：播种输入与真实 JSON/地图适配（已完成）
 

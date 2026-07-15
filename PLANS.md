@@ -379,7 +379,7 @@ references/
 
 ## 阶段 6：播种与作物成长
 
-状态：`[~]`，阶段 6A“纯播种规则与成长阶段计算”和阶段 6B“播种输入与真实 JSON/地图适配”均已完成；阶段 6C 尚未开始。
+状态：`[x]`，阶段 6A“纯播种规则”、阶段 6B“播种输入适配”和阶段 6C“已播种作物视觉”均已完成。
 
 范围：一种原创种子、一种作物、播种校验、跨天成长状态。数据从 JSON 加载，不硬编码内容表。
 
@@ -412,6 +412,19 @@ references/
 - Creator 3.8.8 已自动生成两个新脚本 `.meta`，UUID 唯一；`Main.scene` 已在现有 Player 上添加 `TiledPlantingController`，绑定 `crops.json` 并保存 `mistleaf_seed / 3 / day 1`。
 - 浏览器已实测 `not_tilled`、`planted`、`occupied`、种子按 `3→2→1→0` 消耗和耗尽后的 `no_seed`；按住 E 不重复，同时按空格与 E 时锄地优先。
 - 作物视觉未出现符合阶段边界；移动、碰撞、相机、锄地和调试框回归正常，除 TMX 1.10 已知提示外无项目新错误。
+
+2026-07-15 阶段 6C 完成记录：
+
+- 新增纯 `createCropPatches(farm, grid)` 投影，把权威 `FarmState` 中合法的已播种格转换为 TiledMap 局部渲染坐标；空地、非法阶段和地图外坏状态只在视觉输出中跳过，不修复或反写状态。
+- 新增只读 `CropView` Creator 组件：比较 `FarmState` 引用，仅在成功播种等状态变化后重绘；普通帧、`occupied`、`not_tilled` 和 `no_seed` 不会重复绘制。
+- 幼苗是项目内原创 `Graphics` 像素几何占位：深绿茎、雾绿色双叶与浅色高光；不使用外部图片、商业游戏资源或来源不明素材。
+- 投影保留 `cropId` 和 `stageIndex`，并为 0～2 阶预留不同高度与芽苞大小；当前没有跨天结算，所以人工验收只会看到第 0 阶幼苗。
+- 本切片只负责表现，不改播种输入、种子数量、成长规则、浇水、日期或存档。
+- 新增 3 项纯投影测试，并把 `CropView` 纳入 Creator 3.8.8 组件元数据兼容测试；完整项目测试 `54/54` 与 Creator TypeScript 严格检查已通过。
+- Creator 3.8.8 已自动生成 `CropProjection.ts.meta` 和 `CropView.ts.meta`；importer 均为 `typescript`、imported 均为 `true`，UUID 分别为 `c0457e9f-49f7-4e85-ade5-eb66b2915e9d` 与 `337ff7a0-81ab-4c41-ad49-4fa26f924a26`，全资源 UUID 无重复。
+- `Main.scene` 已保存独立 `Crops` 节点和 `CropView` 组件；层级位于 `TilledSoil` 后、Player 前，`Source=Player`、`Tiled Map=World` 绑定正确。
+- 浏览器已实测锄地后不提前出现幼苗、首次 E 出现一株、第 0 阶幼苗不叠加、三株位置与大小正确；无种子和不可播种位置不会出现幼苗。
+- 角色与调试框层级、相机移动、横屏尺寸、移动、碰撞、锄地和播种日志回归均正常；除已知 TMX 1.10 提示外无项目新错误。
 
 ## 阶段 7：浇水、睡觉与跨天
 

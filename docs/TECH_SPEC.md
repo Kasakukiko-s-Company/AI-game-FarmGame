@@ -229,6 +229,17 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 - 开发日志统一输出状态、底部原点目标瓦片和剩余种子数。临时库存默认是 3 粒 `mistleaf_seed`，阶段 8 将以真实背包替换，不改变 `plantCrop` 领域接口。
 - 本切片不创建作物节点或图片；阶段 6C 只读投影 `FarmState` 中的 `crop`。
 
+## Planted Crop Rendering Slice
+
+阶段 6C 只把权威作物状态投影到画面，不拥有或修改玩法状态：
+
+- `createCropPatches(farm, grid)` 输出底部原点瓦片坐标、TiledMap 局部中心/底边、稳定 `cropId` 和 `stageIndex`；空地、非法阶段、非法坐标和地图外坏状态不进入渲染输出。
+- `CropView` 通过 Inspector 引用 Player 的 `TiledTillingController` 与 World `TiledMap`，只读取 `source.farmState`。成功播种创建新的 farm 引用后重绘，拒绝操作保持旧引用且不叠加图形。
+- `Crops` 独立节点位于 `TilledSoil` 之后、Player 之前，使幼苗覆盖土块而角色与调试框保持在上层。
+- 当前原创占位表现由 `Graphics` 的整数矩形组成：阴影、深绿茎、雾绿色双叶、叶片高光和后续阶段芽苞。没有外部图片、SpriteFrame 或商业游戏素材。
+- `stageIndex` 0～2 会改变茎、叶和芽苞尺寸，为阶段 7 的成长结算保留显示接口；阶段 6C 本身不推进日期或成长。
+- 表现层不会查找种子库存、消费物品、修复坏存档或直接调用播种命令。
+
 ## Tiled Import Smoke Baseline
 
 阶段 3 先锁定最保守的导入边界，再实现地图玩法：
