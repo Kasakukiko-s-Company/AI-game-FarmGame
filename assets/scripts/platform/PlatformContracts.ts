@@ -1,6 +1,25 @@
 /** Platform capabilities exposed to application code at one stable seam. */
 
-export type PlatformKind = 'desktop' | 'wechat';
+export type RuntimeKind = 'windows-native' | 'wechat-minigame';
+export type DistributionChannel = 'steam' | 'standalone' | 'wechat';
+export type WindowsDistributionChannel = Extract<
+  DistributionChannel,
+  'steam' | 'standalone'
+>;
+
+/**
+ * Runtime and storefront are separate facts: Steam is a Windows distribution
+ * channel, while WeChat is both the mini-game runtime host and its channel.
+ */
+export type PlatformDescriptor =
+  | {
+      readonly runtime: 'windows-native';
+      readonly distribution: WindowsDistributionChannel;
+    }
+  | {
+      readonly runtime: 'wechat-minigame';
+      readonly distribution: 'wechat';
+    };
 export type LifecycleState = 'active' | 'background';
 export type Unsubscribe = () => void;
 
@@ -36,7 +55,7 @@ export type AnalyticsValue = string | number | boolean;
 export type AnalyticsProperties = Readonly<Record<string, AnalyticsValue>>;
 
 export interface IPlatformService {
-  readonly kind: PlatformKind;
+  readonly descriptor: PlatformDescriptor;
   getSafeArea(): SafeAreaInsets;
   subscribeLifecycle(listener: (state: LifecycleState) => void): Unsubscribe;
 }

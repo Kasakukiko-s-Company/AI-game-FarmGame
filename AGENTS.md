@@ -7,7 +7,7 @@
 首要发布平台：
 
 1. 微信小游戏
-2. Windows PC
+2. Steam（Windows PC）
 
 当前技术方向：
 
@@ -68,6 +68,13 @@
 
 ## 平台抽象
 
+平台身份分成两个维度：
+
+- 运行环境：`wechat-minigame`、`windows-native`
+- 发行渠道：`wechat`、`steam`、`standalone`
+
+Steam 是 Windows 原生运行环境的发行渠道，不得在共享玩法中被当作独立运行时。
+
 平台能力通过接口隔离，至少预留：
 
 - `IPlatformService`
@@ -80,6 +87,8 @@
 
 - `WeChatPlatformService`
 - `DesktopPlatformService`
+
+所有发行目标必须通过统一 composition root 显式提供输入与持久化 adapter；不得在发行装配中默认使用内存存档。Steamworks 原生调用只能位于 Windows/Steam adapter 或原生桥接层。
 
 ## MVP 范围
 
@@ -98,7 +107,7 @@
 
 - 多人联机、战斗、矿洞、婚姻
 - 大量 NPC、节日、钓鱼、复杂任务
-- 支付、广告、排行榜、云存档
+- 支付、广告、排行榜、自研跨平台云存档（Steam Auto-Cloud 仅作为后续发行配置评估）
 - 商店、完整经济系统和完整 UI
 
 ## 工作流程

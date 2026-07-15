@@ -1,6 +1,6 @@
 # FarmGame 执行计划
 
-更新时间：2026-07-15
+更新时间：2026-07-16
 
 ## 状态说明
 
@@ -474,6 +474,26 @@ references/
 - 浏览器已实测错误位置不跨天、正确位置 day 1→2、出生点传送、湿土次日变干、已浇水成长、未浇水停长不枯死、按住和出生点重复 Enter 不跳日；全部输入优先级和现有移动/碰撞/相机/耕种/调试框回归正常。
 - 除 TMX 1.10 已知提示外没有项目新错误。
 
+## 阶段 7D：双平台架构护栏
+
+状态：`[x]`
+
+范围：把目标平台正式固定为“微信小游戏 + Steam Windows”，分离运行环境与发行渠道，建立统一 composition root，并防止微信、浏览器、Node 文件系统或 Steamworks 调用渗入共享玩法。
+
+完成记录：
+
+- 新增 `RuntimeKind`、`DistributionChannel` 与受约束的 `PlatformDescriptor`：Steam 被建模为 `windows-native` 的发行渠道，微信目标为 `wechat-minigame + wechat`。
+- `IPlatformService` 公开 `descriptor`，不加入成就、覆盖层或云存档等尚未落地的 Steam 专属方法。
+- 新增 `composePlatformServices(target, adapters)` 作为唯一发行 composition root；`saves` 与 `input` 必须显式提供，避免发行包误用 `MemorySaveService`。
+- `steam-windows` 映射到 `DesktopPlatformService('steam')`；`wechat-minigame` 映射到 `WeChatPlatformService` 和注入的安全区。
+- 新增架构护栏测试，禁止共享 module 直接使用 `wx.*`、`window.*`、`localStorage`、`SteamAPI_*` 或 Node 文件系统 import。
+- Steamworks SDK、成就、覆盖层和 Steam Auto-Cloud 不在本阶段接入；这些能力留在阶段 12 的 Windows 原生/JSB adapter 与发行配置中。
+- 平台定向测试 `7/7`、全量测试 `79/79` 和 Creator 3.8.8 TypeScript 严格检查均已通过。
+- Creator 3.8.8 已自动导入 `PlatformComposition.ts` 并生成 `.meta`，importer=`typescript`、imported=`true`、UUID=`f8667f45-63a1-4a81-a911-a2e3fbe14fdc`；全资源 UUID 无重复。
+- `Main.scene` 无新绑定；用户已完成 PC 输入、现有玩法、碰撞、相机和视觉回归，除 TMX 1.10 已知提示外无新错误。
+
+完成门槛：Creator 成功导入新 composition 脚本、Console 无新错误，现有 PC 预览回归正常，全部自动测试和严格类型检查通过。
+
 ## 阶段 8：收获、背包与快捷栏
 
 状态：`[ ]`
@@ -506,13 +526,13 @@ references/
 
 完成门槛：开发者工具无未解释错误；真机首包、加载、存档和完整闭环通过；记录基础库版本、设备与构建参数。
 
-## 阶段 12：Windows 构建验证
+## 阶段 12：Steam Windows 构建验证
 
 状态：`[ ]`
 
-范围：Windows 原生构建环境、窗口设置、本地存档路径、打包和冷启动验证。
+范围：Windows x64 原生构建环境、窗口设置、本地存档路径、Steamworks 原生/JSB adapter、Steam 客户端初始化与降级、打包和冷启动验证；评估用 Steam Auto-Cloud 同步本地存档文件，不实现自研跨平台云存档。
 
-完成门槛：在一台未运行编辑器的 Windows 机器上可启动、完成闭环并恢复存档。
+完成门槛：从 Steam 测试分支在一台未运行编辑器的 Windows 机器上可启动、完成闭环并恢复存档；Steam 客户端存在和不可用两种路径均有明确结果，微信构建不包含 Steamworks 原生依赖。
 
 ## 贯穿所有阶段的验证
 
@@ -536,6 +556,7 @@ references/
 | TMX 图集像素接缝 | 地图出现黑线或串色 | 按 Cocos 版本文档配置边缘扩展、过滤和图集间距 |
 | 存档模型过早耦合表现层 | 后续迁移困难 | 使用纯 JSON、`saveVersion`、稳定 ID 与显式迁移入口 |
 | 两平台输入/存档混写 | 微信构建失败或桌面行为异常 | 所有平台能力通过接口注入 |
+| Steamworks 调用进入共享脚本 | 微信构建失败或原生依赖扩散 | 只允许 Windows/Steam adapter 与 JSB 层接触 SDK，并用架构测试守护 |
 | 过早扩展系统 | 闭环迟迟无法运行 | 每阶段设完成门槛，未通过不进入下一阶段 |
 
 ## 微信小游戏兼容风险
@@ -567,6 +588,7 @@ references/
 ## 外部状态
 
 - 当前没有微信小游戏 AppID；应在阶段 11 前申请，不阻塞编辑器原型。
+- 当前没有已确认的 Steamworks App ID 或合作伙伴后台状态；阶段 12 前准备，不把 SDK、App ID 或凭据提前写入共享玩法。
 - 是否已有自制或授权素材仍未知；在收到明确来源和许可证前，项目只使用原创占位资源。
 - Cocos Dashboard、Cocos Creator、微信开发者工具和 Tiled 的版本、路径与签名已于 2026-07-14 验收。
 

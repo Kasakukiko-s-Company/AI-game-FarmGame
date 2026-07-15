@@ -1,4 +1,4 @@
-import {
+import type {
   IAnalyticsService,
   IAudioService,
   IInputService,
@@ -6,11 +6,15 @@ import {
   ISaveService,
   InputSnapshot,
   LifecycleState,
-  NEUTRAL_INPUT,
+  PlatformDescriptor,
   SafeAreaInsets,
   SaveReadResult,
   SaveWriteResult,
   Unsubscribe,
+  WindowsDistributionChannel,
+} from './PlatformContracts';
+import {
+  NEUTRAL_INPUT,
   ZERO_SAFE_AREA,
 } from './PlatformContracts';
 
@@ -18,7 +22,14 @@ const noOpUnsubscribe: Unsubscribe = () => undefined;
 
 /** Desktop platform identity; native lifecycle wiring belongs to a later stage. */
 export class DesktopPlatformService implements IPlatformService {
-  public readonly kind = 'desktop' as const;
+  public readonly descriptor: PlatformDescriptor;
+
+  public constructor(distribution: WindowsDistributionChannel = 'standalone') {
+    this.descriptor = Object.freeze({
+      runtime: 'windows-native',
+      distribution,
+    });
+  }
 
   public getSafeArea(): SafeAreaInsets {
     return ZERO_SAFE_AREA;
@@ -31,9 +42,15 @@ export class DesktopPlatformService implements IPlatformService {
 
 /** WeChat identity without touching the global wx object from shared code. */
 export class WeChatPlatformService implements IPlatformService {
-  public readonly kind = 'wechat' as const;
+  public readonly descriptor: PlatformDescriptor = Object.freeze({
+    runtime: 'wechat-minigame',
+    distribution: 'wechat',
+  });
+  private readonly safeArea: SafeAreaInsets;
 
-  public constructor(private readonly safeArea: SafeAreaInsets = ZERO_SAFE_AREA) {}
+  public constructor(safeArea: SafeAreaInsets = ZERO_SAFE_AREA) {
+    this.safeArea = safeArea;
+  }
 
   public getSafeArea(): SafeAreaInsets {
     return this.safeArea;

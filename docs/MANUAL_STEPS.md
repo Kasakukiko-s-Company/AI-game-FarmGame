@@ -8,7 +8,45 @@
 
 阶段 2 已完成。代码、自动化测试、Cocos Creator 3.8.8 脚本导入、组件绑定和浏览器预览均已通过验收。
 
-阶段 3A、阶段 3B、阶段 3C、阶段 4A～4D、阶段 5A～5C、阶段 6A～6C 和阶段 7A～7C 均已完成。当前等待用户决定是否建立阶段 7C Git 基线。
+阶段 3A、阶段 3B、阶段 3C、阶段 4A～4D、阶段 5A～5C、阶段 6A～6C 和阶段 7A～7D 均已完成，阶段 7C Git 基线已经推送。当前等待用户决定是否建立阶段 7D Git 基线。
+
+## 阶段 7D：双平台架构护栏（已完成）
+
+本切片只调整纯 TypeScript 平台描述与装配，不添加场景组件、不改变按键、不接入 `wx` 或 Steamworks SDK。
+
+### A. 导入新 composition 脚本
+
+1. 停止浏览器预览，回到 **Cocos Creator 3.8.8**。
+2. 点击资源管理器右上角圆形 **刷新** 按钮，等待脚本编译和资源导入完成。
+3. 展开 `assets → scripts → platform`，确认出现 `PlatformComposition`。
+4. `PlatformComposition` 是纯 TypeScript composition root，不能添加到节点，也不需要修改 `Main.scene`。
+5. 确认 `PlatformComposition.ts.meta` 由 Creator 自动生成；不要手写 `.meta`，不要复制 UUID。
+6. 查看底部 Console，确认没有新的红色错误；TMX 1.10 已知提示可以保留。
+
+### B. PC 预览回归
+
+1. 保持 `Main.scene` 不变并启动浏览器预览。
+2. 验证 WASD、方向键、空格锄地、E 播种、F 浇水和 Enter 睡觉仍正常。
+3. 验证石墙碰撞、相机边界、耕地/作物/湿土视觉和黄色/蓝色调试框正常。
+4. 本阶段不会显示 Steam Overlay、Steam 登录或微信触控 UI；没有这些表现属于正常结果。
+
+### C. 回报模板
+
+```text
+PlatformComposition 导入：成功/失败
+PlatformComposition .meta：自动生成/未生成
+Main.scene 新绑定：无
+PC 输入和现有玩法回归：正常/异常
+除 TMX 1.10 已知提示外的新错误：无/错误内容
+```
+
+### D. 2026-07-16 验收记录
+
+- `PlatformComposition` 导入成功。
+- `PlatformComposition.ts.meta` 由 Creator 自动生成；importer=`typescript`、imported=`true`、UUID=`f8667f45-63a1-4a81-a911-a2e3fbe14fdc`，全资源 UUID 无重复。
+- `Main.scene` 无新绑定。
+- PC 输入和现有玩法回归正常。
+- 除 TMX 1.10 已知提示外无新错误。
 
 ## 阶段 7C：睡觉与跨天结算（已完成）
 

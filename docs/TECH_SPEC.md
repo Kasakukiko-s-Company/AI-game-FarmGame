@@ -36,16 +36,23 @@ Application Services
         ↓
 Domain State + Rules
         ↑
-Platform Interfaces ← Desktop / WeChat Adapters
+Platform Interfaces ← Steam Windows / WeChat Adapters
 ```
 
 组件负责把引擎事件翻译为领域命令，再把领域结果投影到节点。存档序列化领域状态，不序列化节点树。
 
 ## Platform Separation
 
+平台身份拆成运行环境与发行渠道，避免把 Steam 误建模为与 Windows 并列的运行时：
+
+```text
+wechat-minigame + wechat
+windows-native  + steam
+```
+
 已建立接口：
 
-- `IPlatformService`：平台类型、生命周期、安全区、能力查询。
+- `IPlatformService`：平台描述、生命周期和安全区；平台描述同时包含 runtime 与 distribution。
 - `ISaveService`：读、写、删除存档；返回显式成功/失败结果。
 - `IInputService`：移动向量、动作、选择与取消的语义输入。
 - `IAudioService`：播放、停止、静音和音量。
@@ -57,10 +64,15 @@ Platform Interfaces ← Desktop / WeChat Adapters
 
 - `PlatformContracts.ts` 定义五个接口和统一结果类型。
 - `PlatformAdapters.ts` 只提供初始化期可验证的 Desktop/WeChat 身份、安全区注入、内存存档、中性输入和空音频/分析实现。
+- `PlatformComposition.ts` 是发行目标的唯一 composition root；它把 `steam-windows` 映射为 `windows-native + steam`，把 `wechat-minigame` 映射为 `wechat-minigame + wechat`。
+- composition root 强制调用者提供 `ISaveService` 与 `IInputService`，不允许发行包静默使用 `MemorySaveService`；音频和分析可在 MVP 使用空 adapter。
 - `ISaveService` 只读写不透明字符串，不理解 `SaveData`，因此平台存储不会拥有农场规则。
 - 微信适配器当前不直接访问 `wx`；真实生命周期、触控和持久化只在对应玩法阶段接入。
+- Steamworks 原生调用不得进入共享 TypeScript；阶段 12 通过 Windows 原生/JSB adapter 接入。Steam 专属能力按成就、身份等独立 capability seam 扩展，不把 `IPlatformService` 变成浅层大接口。
 
 这个接口边界同时服务两个实际目标平台，因此保留；没有为尚不存在的子系统继续拆分空接口。
+
+阶段 7D 增加架构护栏测试：`core`、`data`、`farming`、`inventory`、`player`、`ui` 和 `world` 不得出现 `wx.*`、`window.*`、`localStorage`、`SteamAPI_*` 或 Node 文件系统 import。平台差异必须保持在 `assets/scripts/platform` seam 后面。
 
 ## Runtime State
 
@@ -344,7 +356,7 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 
 - 纯 TypeScript 单元测试：坐标、背包、作物成长、日结算、存档序列化与迁移。
 - Cocos 组件集成测试：输入桥接、节点同步、碰撞和场景加载。
-- 手工矩阵：编辑器预览、Windows 构建、微信开发者工具、微信真机。
+- 手工矩阵：编辑器预览、Steam Windows 构建、微信开发者工具、微信真机。
 - 每个缺陷先尽量在纯逻辑层建立回归测试。
 
 当前未引入第三方测试框架。初始化阶段使用 Creator 3.8.8 自带 TypeScript 5.8.2 执行项目级 `--noEmit`；`skipLibCheck` 仅跳过引擎自带声明文件的内部诊断，项目代码仍启用 `strict`、`noImplicitOverride`、`noUncheckedIndexedAccess` 等检查。纯逻辑测试框架在第一个需要测试的玩法切片中按兼容性选择。
