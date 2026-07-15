@@ -74,7 +74,7 @@ npm.cmd run test:world
 - `core/save`：版本化、平台无关的存档数据。
 - `data`：JSON 类型、结构解码后的跨文件校验。
 - `platform`：平台接口与适配器，不包含游戏规则。
-- `farming`：阶段 5A 已加入纯 `FarmState` 与 `tillTile` 命令规则；阶段 5B 加入动作键按下沿会话和 `TiledTillingController` 应用组件；阶段 5C 加入纯可耕/已耕矩形投影和只读 `TilledSoilView`。状态、输入适配和视觉保持单向依赖。
+- `farming`：阶段 5A 已加入纯 `FarmState` 与 `tillTile` 命令规则；阶段 5B 加入动作键按下沿会话和 `TiledTillingController` 应用组件；阶段 5C 加入纯可耕/已耕矩形投影和只读 `TilledSoilView`；阶段 6A 加入纯 `plantCrop` 播种命令和配置驱动的 `calculateCropGrowthStage`。状态、输入适配和视觉保持单向依赖。
 - `inventory`、`ui`：仅建立目录，等待对应垂直切片，不提前填充空架构。
 - `player`：阶段 2 已实现纯移动规则、节点控制器和原创几何占位视图；阶段 3B 只通过接口接受 world 碰撞约束，不直接查询 Tiled。
 - `world`：阶段 3A 已完成 Tiled 导入链路；阶段 3B 已完成网格碰撞；阶段 3C 已完成有界相机；阶段 4A 已完成纯瓦片交互规则；阶段 4B 已完成只读交互目标调试视图；阶段 4C 已完成纯可耕作查询；阶段 4D 已完成屏幕/触控到瓦片的 Camera adapter 与浏览器鼠标验收，真实微信设备触控留到平台构建阶段回归。
@@ -120,5 +120,6 @@ $process.ExitCode
 - 阶段 5A 的纯耕地状态规则、三个自动测试、Creator 元数据和浏览器回归均已验收，并已纳入阶段 5A Git 基线。
 - 阶段 5B 的空格语义动作、按住去重、真实地图可耕作适配、Creator 组件与场景绑定均已完成；浏览器运行时 Console 已验证 `tilled`、`already_tilled` 和 `not_farmable`。
 - 阶段 5C 的纯可耕/已耕地投影、原创 Graphics 占位视图、Creator 元数据和 `TilledSoil` 场景绑定已完成；三态地面、相机尺寸和现有玩法回归均已通过浏览器验收。
+- 阶段 6A 的纯播种规则和成长阶段计算已通过 7 项目标测试；它使用最小 `SeedStack` 连接未来背包，不添加 Cocos 组件、按键或作物视觉。Creator 已生成 `CropPlanting.ts.meta`，现有玩法回归无异常。
 
 不要提交 AppSecret、登录凭据、二维码、`.env`、构建缓存或来源不明素材。

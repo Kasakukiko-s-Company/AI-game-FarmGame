@@ -1,12 +1,21 @@
 import type { TileCoordinate } from '../world/TileInteraction';
 
+/** Persistable state for one planted crop; growth is settled by day number. */
+export interface CropState {
+  readonly cropId: string;
+  readonly plantedOnDay: number;
+  readonly growthProgress: number;
+  readonly stageIndex: number;
+  readonly lastGrowthDay: number;
+}
+
 /** Persistable MVP state for a tile that has entered the farming system. */
 export interface FarmTileState {
   readonly x: number;
   readonly y: number;
   readonly isTilled: true;
-  readonly wateredOnDay: null;
-  readonly crop: null;
+  readonly wateredOnDay: number | null;
+  readonly crop: CropState | null;
 }
 
 /** Authoritative farming state; ordinary untouched ground is absent from tiles. */

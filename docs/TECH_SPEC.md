@@ -205,6 +205,18 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 - MVP 视觉使用原创 `Graphics` 三态表现：绿色 Ground 是普通草地，浅黄绿色网格是可耕但未耕的药圃，深棕色矩形、边框和三条耕沟是已耕地。它是可替换的占位表现，不是存档来源，也不修改 TMX 或阻挡层。
 - `TilledSoil` 在 Canvas 中位于 World 之后、Player 和 InteractionDebug 之前，保证土块覆盖草地但不遮挡角色与调试框。
 
+## Planting Domain Slice
+
+阶段 6A 在纯 farming module 内建立播种规则，不接输入、场景或渲染：
+
+- `plantCrop(farm, target, seeds, currentDay, crops)` 是公开命令 seam；调用方提供经过验证的只读 `CropDefinition` 列表，implementation 通过 `seedItemId` 解析作物，因而不硬编码雾叶草或内容表。
+- `SeedStack` 只表达阶段 6 所需的稳定物品 ID 与数量。成功时消耗 1 粒并返回新种子堆；阶段 8 的背包将提供相同数据并接收结果，不需要重写播种规则。
+- 目标必须已经存在于 `FarmState.tiles` 且 `crop === null`。无种子、未耕地、已有作物和未知种子分别返回 `no_seed`、`not_tilled`、`occupied`、`invalid_seed`，正常玩法拒绝不会抛异常或修改输入。
+- 非法天数、负数/非整数种子数量和非法成长配置属于状态或数据错误，会明确抛出 `RangeError`，不使用默认值掩盖。
+- 成功播种创建内嵌 `CropState`，初始 `growthProgress=0`、`stageIndex=0`；`lastGrowthDay=currentDay-1` 表示播种日尚未结算，为阶段 7 的单次日结束结算保留语义。
+- `calculateCropGrowthStage` 按 `growthStages` 的累计正整数天数选择零基视觉阶段；成熟后停在最后一个阶段并返回 `isMature=true`。
+- 阶段 6A 不定义播种键、不加载 `JsonAsset`、不绘制作物，也不执行浇水或跨天成长。Cocos/JSON adapter 属于阶段 6B，视觉属于阶段 6C，日结算属于阶段 7。
+
 ## Tiled Import Smoke Baseline
 
 阶段 3 先锁定最保守的导入边界，再实现地图玩法：
