@@ -74,7 +74,7 @@ npm.cmd run test:world
 - `core/save`：版本化、平台无关的存档数据。
 - `data`：JSON 类型、结构解码后的跨文件校验。
 - `platform`：平台接口与适配器，不包含游戏规则。
-- `farming`：阶段 5A 已加入纯 `FarmState` 与 `tillTile` 命令规则；阶段 5B 加入动作键按下沿会话和 `TiledTillingController` 应用组件；阶段 5C 加入纯可耕/已耕矩形投影和只读 `TilledSoilView`；阶段 6A 加入纯 `plantCrop` 播种命令和配置驱动的 `calculateCropGrowthStage`。状态、输入适配和视觉保持单向依赖。
+- `farming`：阶段 5A 已加入纯 `FarmState` 与 `tillTile` 命令规则；阶段 5B 加入动作键按下沿会话和 `TiledTillingController` 应用组件；阶段 5C 加入纯可耕/已耕矩形投影和只读 `TilledSoilView`；阶段 6A 加入纯 `plantCrop` 播种命令和配置驱动的 `calculateCropGrowthStage`；阶段 6B 通过 E 键语义、严格 `crops.json` 解码和 `TiledPlantingController` 复用唯一农田状态。状态、输入适配和视觉保持单向依赖。
 - `inventory`、`ui`：仅建立目录，等待对应垂直切片，不提前填充空架构。
 - `player`：阶段 2 已实现纯移动规则、节点控制器和原创几何占位视图；阶段 3B 只通过接口接受 world 碰撞约束，不直接查询 Tiled。
 - `world`：阶段 3A 已完成 Tiled 导入链路；阶段 3B 已完成网格碰撞；阶段 3C 已完成有界相机；阶段 4A 已完成纯瓦片交互规则；阶段 4B 已完成只读交互目标调试视图；阶段 4C 已完成纯可耕作查询；阶段 4D 已完成屏幕/触控到瓦片的 Camera adapter 与浏览器鼠标验收，真实微信设备触控留到平台构建阶段回归。

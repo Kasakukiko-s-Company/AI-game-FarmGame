@@ -379,7 +379,7 @@ references/
 
 ## 阶段 6：播种与作物成长
 
-状态：`[~]`，阶段 6A“纯播种规则与成长阶段计算”已完成；阶段 6B 尚未开始。
+状态：`[~]`，阶段 6A“纯播种规则与成长阶段计算”和阶段 6B“播种输入与真实 JSON/地图适配”均已完成；阶段 6C 尚未开始。
 
 范围：一种原创种子、一种作物、播种校验、跨天成长状态。数据从 JSON 加载，不硬编码内容表。
 
@@ -399,6 +399,19 @@ references/
 
 - `[x]` Creator 3.8.8 已导入 `CropPlanting.ts` 并自动生成 `.meta`；importer=`typescript`、imported=`true`，UUID 无重复，Console 除 TMX 1.10 已知提示外无新错误。
 - `[x]` `Main.scene` 无新绑定或文件改动；现有移动、碰撞、相机、锄地视觉与调试框浏览器回归正常。
+
+2026-07-15 阶段 6B 完成记录：
+
+- `KeyboardInputBridge` 将 PC 的 `E` 键翻译为平台无关的 `secondaryAction`；`Space/primaryAction` 仍只负责锄地，同时按下时锄地优先。
+- 新增 `decodeCropsData`，在运行时把 `JsonAsset` 的未知 JSON 解码为严格的 `CropsDataFile`，拒绝错误版本、非法成长天数以及重复作物或种子 ID。
+- `TiledTillingController.plantFacingCrop` 是现有权威 `FarmState` 的命令专用 seam；播种不会在新组件里创建第二份农场状态，`TilledSoilView` 继续读取同一状态引用。
+- 新增 `TiledPlantingController`：只处理 E 键按下沿、临时 3 粒 `mistleaf_seed`、`crops.json` 适配与开发日志；成功播种消耗 1 粒，长按 E 只执行一次。
+- 运行时日志覆盖 `planted`、`not_tilled`、`occupied`、`no_seed` 和 `invalid_seed`，包含目标瓦片与剩余种子数。
+- 本切片不绘制作物；阶段 6C 才把已播种状态投影为原创幼苗占位视觉。
+- 新增 JSON 解码、键盘语义和 adapter 结构测试；Creator 3.8.8 TypeScript 5.8.2 严格检查已通过。
+- Creator 3.8.8 已自动生成两个新脚本 `.meta`，UUID 唯一；`Main.scene` 已在现有 Player 上添加 `TiledPlantingController`，绑定 `crops.json` 并保存 `mistleaf_seed / 3 / day 1`。
+- 浏览器已实测 `not_tilled`、`planted`、`occupied`、种子按 `3→2→1→0` 消耗和耗尽后的 `no_seed`；按住 E 不重复，同时按空格与 E 时锄地优先。
+- 作物视觉未出现符合阶段边界；移动、碰撞、相机、锄地和调试框回归正常，除 TMX 1.10 已知提示外无项目新错误。
 
 ## 阶段 7：浇水、睡觉与跨天
 

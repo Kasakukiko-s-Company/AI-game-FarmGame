@@ -48,6 +48,7 @@ export class KeyboardInputBridge extends Component implements IInputService {
       moveX: Number(right) - Number(left),
       moveY: Number(up) - Number(down),
       primaryAction: this.isHeld(KeyCode.SPACE),
+      secondaryAction: this.isHeld(KeyCode.KEY_E),
     };
   }
 
@@ -79,6 +80,7 @@ export class KeyboardInputBridge extends Component implements IInputService {
       keyCode === KeyCode.ARROW_RIGHT ||
       keyCode === KeyCode.ARROW_UP ||
       keyCode === KeyCode.ARROW_DOWN ||
-      keyCode === KeyCode.SPACE;
+      keyCode === KeyCode.SPACE ||
+      keyCode === KeyCode.KEY_E;
   }
 }

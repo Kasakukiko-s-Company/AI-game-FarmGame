@@ -2,7 +2,7 @@
 
 一个面向微信小游戏和 Windows PC 的原创 2D 像素风农场生活模拟游戏项目。
 
-阶段 0、工具安装验收、阶段 1“工程初始化”、阶段 2“角色移动原型”、阶段 3A～3C、阶段 4A～4D、阶段 5A～5C“耕地”，以及阶段 6A“纯播种规则与成长阶段计算”均已完成。
+阶段 0、工具安装验收、阶段 1“工程初始化”、阶段 2“角色移动原型”、阶段 3A～3C、阶段 4A～4D、阶段 5A～5C“耕地”，以及阶段 6A～6B“播种规则与输入适配”均已完成。
 
 ## 目标
 
@@ -61,6 +61,7 @@
 - 阶段 5B 已通过：空格键映射为语义 `primaryAction`，按住只触发一次；`TiledTillingController` 将 Player 朝向目标、`maps.json` 可耕作矩形和真实 `Blocking` 图层连接到 `FarmState`。Creator 场景绑定和浏览器日志验收均已完成，`tilled`、`already_tilled` 与 `not_farmable` 正常；土地外观仍不会改变。
 - 阶段 5C 已通过：纯投影分别生成浅黄绿色未耕药圃和深棕色已耕土块，`TilledSoilView` 以原创 `Graphics` 显示三态地面且不修改玩法状态。场景绑定、可耕区区分、耕地覆盖、相机尺寸和现有玩法回归均正常。
 - 阶段 6A 已通过：`plantCrop` 以不可变状态校验种子数量、已耕地和已有作物，并从 `CropDefinition` 解析种子对应作物；`calculateCropGrowthStage` 按 JSON 配置的累计天数计算阶段与成熟状态。Creator 导入、`.meta` 生成和现有玩法回归均正常；本切片不含播种按键或作物视觉。
+- 阶段 6B 已通过：E 键输出语义 `secondaryAction`，`decodeCropsData` 严格解码真实 `crops.json`，`TiledPlantingController` 通过现有 `TiledTillingController` 的命令 seam 修改唯一 `FarmState`。Creator 元数据和 Player 场景绑定已保存；浏览器实测未耕拒绝、成功播种、重复占用、三粒种子消耗、耗尽拒绝、长按去重和锄地优先均正常。作物视觉仍留给阶段 6C。
 
 ## 文档索引
 
@@ -80,6 +81,6 @@
 
 ## 当前阶段边界
 
-阶段 6A 已完成，等待明确指令建立 Git 基线并进入阶段 6B。当前不自行加入完整背包、NPC、商店、任务或完整 UI。
+阶段 6B 已完成，等待明确指令建立阶段 6B Git 基线或进入阶段 6C；当前不自行加入完整背包、NPC、商店、任务或完整 UI。
 
 当前没有微信小游戏 AppID，这不阻塞编辑器原型、PC 预览和核心玩法开发；进入微信小游戏构建验收前必须申请。安装仍应保留且只从各工具官方网站更新，MVP 期间不得升级 Cocos Creator。

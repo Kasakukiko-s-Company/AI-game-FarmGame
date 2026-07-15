@@ -9,6 +9,7 @@ import {
   warn,
 } from 'cc';
 import type {
+  CropDefinition,
   MapDefinition,
   TilePointData,
   TileRectangleData,
@@ -27,8 +28,14 @@ import {
 } from '../world/TileFarmability';
 import {
   getFacingTile,
+  type TileCoordinate,
   type TileGridGeometry,
 } from '../world/TileInteraction';
+import {
+  plantCrop,
+  type PlantCropResult,
+  type SeedStack,
+} from './CropPlanting';
 
 const { ccclass, property, requireComponent } = _decorator;
 
@@ -38,6 +45,10 @@ interface TillingSetup {
   readonly mapTransform: UITransform;
   readonly farmability: TileFarmabilityMap;
   readonly grid: TileGridGeometry;
+}
+
+export interface FacingPlantCropResult extends PlantCropResult {
+  readonly target: TileCoordinate | null;
 }
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
@@ -105,6 +116,32 @@ export class TiledTillingController extends Component {
     return this.findMapDefinition()?.farmableArea ?? null;
   }
 
+  /** Applies planting to this component's authoritative FarmState. */
+  public plantFacingCrop(
+    seeds: SeedStack,
+    currentDay: number,
+    crops: ReadonlyArray<CropDefinition>,
+  ): FacingPlantCropResult | null {
+    const setup = this.getSetup();
+    if (setup === null) {
+      return null;
+    }
+
+    const target = this.getFacingTarget(setup);
+    const result = plantCrop(
+      this.session.farm,
+      target,
+      seeds,
+      currentDay,
+      crops,
+    );
+    this.session = {
+      ...this.session,
+      farm: result.farm,
+    };
+    return { ...result, target };
+  }
+
   protected override onLoad(): void {
     this.session = {
       farm: { mapId: this.mapId, tiles: [] },
@@ -151,12 +188,7 @@ export class TiledTillingController extends Component {
     }
 
     this.didWarnMissingSetup = false;
-    const playerLocal = setup.mapTransform.convertToNodeSpaceAR(this.node.worldPosition);
-    const target = getFacingTile(
-      { x: playerLocal.x, y: playerLocal.y },
-      setup.controller.facing,
-      setup.grid,
-    );
+    const target = this.getFacingTarget(setup);
     const result = updateTillingSession(
       this.session,
       true,
@@ -216,6 +248,15 @@ export class TiledTillingController extends Component {
         },
       },
     };
+  }
+
+  private getFacingTarget(setup: TillingSetup): TileCoordinate | null {
+    const playerLocal = setup.mapTransform.convertToNodeSpaceAR(this.node.worldPosition);
+    return getFacingTile(
+      { x: playerLocal.x, y: playerLocal.y },
+      setup.controller.facing,
+      setup.grid,
+    );
   }
 
   private findMapDefinition(): MapDefinition | null {

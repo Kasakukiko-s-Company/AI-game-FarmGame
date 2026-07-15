@@ -8,7 +8,85 @@
 
 阶段 2 已完成。代码、自动化测试、Cocos Creator 3.8.8 脚本导入、组件绑定和浏览器预览均已通过验收。
 
-阶段 3A、阶段 3B、阶段 3C、阶段 4A～4D、阶段 5A、阶段 5B、阶段 5C 和阶段 6A 均已完成。当前等待明确指令建立阶段 6A Git 基线或进入阶段 6B。
+阶段 3A、阶段 3B、阶段 3C、阶段 4A～4D、阶段 5A、阶段 5B、阶段 5C、阶段 6A 和阶段 6B 均已完成。当前等待明确指令建立阶段 6B Git 基线或进入阶段 6C。
+
+## 阶段 6B：播种输入与真实 JSON/地图适配（已完成）
+
+本阶段让 E 键在角色正前方一格播种。它复用现有 Player、World、已耕土地和唯一 `FarmState`，不会出现幼苗画面；作物视觉属于阶段 6C。
+
+### A. 刷新并确认新脚本
+
+1. 停止正在运行的浏览器预览，回到 Cocos Creator 3.8.8。
+2. 在左下角资源管理器点击圆形 **刷新** 按钮，等待资源导入和脚本编译结束。
+3. 展开 `assets → scripts → data`，确认出现 `CropDataDecoder`。
+4. 展开 `assets → scripts → farming`，确认出现 `TiledPlantingController`。
+5. 两个脚本的 `.meta` 必须由 Creator 3.8.8 自动生成；不要自行创建或编辑。
+6. 查看底部 Console，确认没有新的红色编译错误。TMX 1.10 已知兼容提示可保留。
+
+### B. 把播种组件添加到现有 Player
+
+1. 在左上角层级管理器展开 `Main → Canvas`，单击现有 `Player` 节点。
+2. 在右侧属性检查器滚动到最下方，点击 **添加组件**。
+3. 搜索 `TiledPlantingController` 并添加。不要新建第二个 Player、World、TilledSoil 或作物节点。
+4. 添加后确认出现以下属性：`Crops Data`、`Seed Item Id`、`Starting Seed Quantity`、`Current Day`。
+5. 在资源管理器展开 `assets → data`，把 `crops`（源文件是 `crops.json`）拖到 `Crops Data`。
+6. 保持以下值：
+   - `Seed Item Id`：`mistleaf_seed`
+   - `Starting Seed Quantity`：`3`
+   - `Current Day`：`1`
+7. 不需要再绑定 `World` 或 `Tiled Map`；组件通过同节点现有 `TiledTillingController` 使用已绑定地图和权威农田状态。
+8. 按 `Ctrl+S` 保存 `Main.scene`。
+
+### C. 浏览器预览播种验收
+
+1. 点击顶部预览按钮，打开浏览器后点击游戏画面取得键盘焦点。
+2. 按 WASD 或方向键移动，使黄色框落到尚未耕作的浅黄绿色药圃格；短按一次 E。
+3. 打开浏览器开发者工具 Console，应看到类似：`[TiledPlantingController] not_tilled tile (x, y); seeds=3.`。运行时日志以浏览器 Console 为准，不要求出现在 Creator 底部 Console。
+4. 面向该格短按一次空格，把它耕成深棕色；松开空格后短按 E。日志应变为 `planted`，`seeds=2`。
+5. 画面暂时不会出现幼苗，这是阶段 6B 的预期；深棕土地仍应存在。
+6. 不移动，再短按 E。日志应为 `occupied`，种子仍是 `2`。
+7. 再耕两个不同的可耕格，并分别短按 E：两次应为 `planted`，剩余种子依次为 `1`、`0`。
+8. 面向第四块已耕空地短按 E，应为 `no_seed`，种子保持 `0`。
+9. 按住 E 不放：同一次按住期间只能出现一条播种日志；松开后再次按下才可触发下一次。
+10. 如要验证 `invalid_seed`，只在测试结束后临时把 Inspector 的 `Seed Item Id` 改为不存在的 ID并重新预览；应输出 `invalid_seed` 且不消耗种子。验证后恢复为 `mistleaf_seed` 并保存。此项可选。
+11. 同时按住空格和 E 时，本阶段规定锄地优先；不应在同一帧自动把刚耕的格子立即播种。
+
+### D. 现有玩法回归
+
+1. 确认 WASD、方向键、斜向移动和停止朝向正常。
+2. 确认石墙碰撞、斜向滑墙、相机跟随与地图四边限制正常。
+3. 确认空格锄地、浅黄绿/深棕土地、黄色朝向框和蓝色点击框正常。
+4. 切换另一种横屏预览尺寸，重复一次移动、锄地和 E 播种；坐标不能漂移。
+5. 浏览器与 Creator 不应出现新的红色错误或重复警告；TMX 1.10 已知提示除外。
+
+完成后回复：
+
+```text
+CropDataDecoder / TiledPlantingController 导入：成功/失败
+TiledPlantingController .meta：自动生成/未生成
+Player 组件添加：成功/失败
+Crops Data：crops/未绑定
+Seed Item Id / Starting Seed Quantity / Current Day：mistleaf_seed / 3 / 1（或实际值）
+未耕地按 E：not_tilled/其他完整日志
+已耕空地首次 E：planted，seeds=2/其他完整日志
+同格再次 E：occupied，种子不变/其他完整日志
+三粒种子耗尽后：no_seed，seeds=0/其他完整日志
+按住 E 不重复：正常/异常
+空格与 E 同时按：锄地优先/异常
+作物视觉：未出现（阶段 6B 正常）/出现（说明内容）
+移动、碰撞、相机、锄地和调试框回归：正常/异常
+除 TMX 1.10 已知提示外的新错误：无/完整内容
+```
+
+### E. 验收记录
+
+- 验收日期：2026-07-15。
+- `CropDataDecoder` 与 `TiledPlantingController` 导入成功；Creator 3.8.8 自动生成 `.meta`，importer=`typescript`、imported=`true`，UUID 分别为 `4d0dbc99-f970-4aa4-9234-ab6e00857e9c` 与 `f61f18f9-0bb0-492a-9810-fda55f54f1b7`，全资源 UUID 无重复。
+- `Main.scene` 已在现有 Player 上添加 `TiledPlantingController`，`Crops Data=crops`、`Seed Item Id=mistleaf_seed`、`Starting Seed Quantity=3`、`Current Day=1`。
+- 浏览器 Console 已验证未耕地 `not_tilled`、首次播种 `planted`、同格再次操作 `occupied`，三粒种子依次消耗到 0，之后返回 `no_seed`。
+- 按住 E 不重复；空格与 E 同时按下时锄地优先；阶段 6B 没有作物视觉符合预期。
+- 移动、碰撞、相机、锄地和黄色/蓝色调试框回归正常；除 TMX 1.10 已知提示外没有项目新错误。
+- 截图中 `QoderWork`、`Immersive Translate` 和 `content_scripts` 的连接提示来自浏览器扩展内容脚本，不是 FarmGame 或 Cocos 运行时错误。
 
 ## 阶段 6A：纯播种规则与成长阶段计算（已完成）
 

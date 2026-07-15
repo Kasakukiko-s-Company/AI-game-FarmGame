@@ -26,3 +26,18 @@ test('clears held movement keys whenever the preview canvas is resized', async (
     'The resize handler must clear every held movement key.',
   );
 });
+
+test('maps E to the semantic secondary action used for planting', async () => {
+  const source = await readFile(BRIDGE_SOURCE_URL, 'utf8');
+
+  assert.match(
+    source,
+    /secondaryAction:\s*this\.isHeld\(KeyCode\.KEY_E\)/,
+    'KeyboardInputBridge must expose E through InputSnapshot.secondaryAction.',
+  );
+  assert.match(
+    source,
+    /keyCode\s*===\s*KeyCode\.KEY_E/,
+    'KeyboardInputBridge must retain KEY_E key-down events.',
+  );
+});

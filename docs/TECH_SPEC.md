@@ -217,6 +217,18 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 - `calculateCropGrowthStage` 按 `growthStages` 的累计正整数天数选择零基视觉阶段；成熟后停在最后一个阶段并返回 `isMature=true`。
 - 阶段 6A 不定义播种键、不加载 `JsonAsset`、不绘制作物，也不执行浇水或跨天成长。Cocos/JSON adapter 属于阶段 6B，视觉属于阶段 6C，日结算属于阶段 7。
 
+## Planting Input and JSON/Tiled Adapter Slice
+
+阶段 6B 把阶段 6A 规则接入现有输入、JSON 和唯一农田状态，但仍不绘制作物：
+
+- `KeyboardInputBridge` 把 `KeyCode.KEY_E` 翻译为 `InputSnapshot.secondaryAction`；farming 组件不读取物理键码，后续触控按钮可复用同一语义。
+- `decodeCropsData(value)` 把 `JsonAsset.json` 当作 `unknown` 校验：只接受 schema 1、非空稳定 ID、正整数成长阶段/产量、合法季节，以及不重复的作物 ID 和种子 ID。
+- `TiledTillingController` 继续独占权威 `TillingSession/FarmState`。公开的 `plantFacingCrop` 只允许执行“在当前面对格播种”命令，不暴露任意状态 setter；成功后保留锄头按键门闩并替换同一会话中的 farm 引用。
+- `TiledPlantingController` 与 Player 同节点，只拥有临时 `SeedStack` 和 `secondaryAction` 门闩；它从现有 `PlayerController` 读语义输入，从 `crops.json` 取作物配置，再调用状态拥有者的命令 seam。
+- E 从松开到按下的边沿只执行一次；同时按下空格和 E 时锄地优先，避免同一帧先耕后种。成功消耗 1 粒种子，普通拒绝不消耗。
+- 开发日志统一输出状态、底部原点目标瓦片和剩余种子数。临时库存默认是 3 粒 `mistleaf_seed`，阶段 8 将以真实背包替换，不改变 `plantCrop` 领域接口。
+- 本切片不创建作物节点或图片；阶段 6C 只读投影 `FarmState` 中的 `crop`。
+
 ## Tiled Import Smoke Baseline
 
 阶段 3 先锁定最保守的导入边界，再实现地图玩法：
