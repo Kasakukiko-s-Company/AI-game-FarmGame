@@ -171,6 +171,17 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 - 当前只支持已经锁定的 2D 正交 Camera 和轴对齐、缩放为 1 的 World；真实微信设备触控仍须在后续微信构建阶段回归。
 - 阶段 4D 的 Creator 绑定、浏览器鼠标点击、相机移动后点击和另一横屏尺寸点击已验收；浏览器设备触控模拟未执行，不计入已通过项目。
 
+## Farm State Slice
+
+阶段 5A 只建立可持久化的耕地状态变更，不接输入和渲染：
+
+- `FarmState` 以 `mapId` 和按底部原点整数瓦片坐标保存的 `tiles` 作为权威领域状态；普通未开垦地面不写入数组。
+- `tillTile(farm, target, isFarmable)` 是公开命令 seam；world 的可耕作性通过查询函数注入，farming 不直接读取 TiledMap 或 `maps.json`。
+- 成功结果为 `tilled`，创建 `isTilled=true`、尚未浇水且没有作物的地块；输入状态不被修改。
+- 已存在的同坐标返回 `already_tilled`，不可耕作或缺失目标返回 `not_farmable`；两种结果都保持原状态，不抛出正常玩法错误。
+- 阶段 5B 才负责锄头语义输入和真实地图适配，阶段 5C 才负责已耕地视觉；5A 不修改场景。
+- 阶段 5A 已通过 Creator 导入和浏览器回归；首次预览出现的 Box2D 外部缓存加载失败在资源重建后通过强制刷新恢复，不属于 farming 代码错误。
+
 ## Tiled Import Smoke Baseline
 
 阶段 3 先锁定最保守的导入边界，再实现地图玩法：
