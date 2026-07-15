@@ -304,6 +304,17 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 - `TilledSoilView` 依次绘制可耕地、干燥已耕地和当前日湿土；它仍只读权威状态，层级继续位于作物和 Player 下方。
 - 阶段 7B 不推进日期或成长。睡觉、`advanceFarmDay` adapter、次日湿土失效与成长视觉回归属于阶段 7C。
 
+阶段 7C 把睡觉点连接到同一个日结算入口，不增加第二份日期状态：
+
+- `InputSnapshot.sleepAction` 是平台无关的睡觉确认动作；PC 暂映射 Enter，未来微信触控按钮仍输出相同语义。
+- `sleepAtTile(state, target, sleepTile, crops)` 只在正前方目标等于配置睡觉格时调用 `advanceFarmDay`。普通位置返回 `not_at_sleep_point`，未知持久化作物返回 `invalid_crop`，两者都保持原状态引用。
+- `TiledTillingController.sleepFacingTile()` 是唯一运行时命令 seam：它原子替换 `currentDay` 与 `FarmState`，同时把已验证的 `spawnTile` 转成世界坐标交给输入 adapter；不暴露任意状态 setter。
+- `TiledSleepingController` 只处理 Enter 按下沿、JSON 解码、动作优先级、日志和成功传送。空格、E、F、Enter 同时出现时仍按锄地 > 播种 > 浇水 > 睡觉处理。
+- 成功睡觉后 Player 被移到出生点，因此长按只触发一次，松开后立即再次按 Enter 也因不再面对睡觉点而不能连续跳日。
+- `SleepPointProjection` 和 `SleepPointView` 只把 `maps.json.sleepTile` 显示为原创几何休息标记。它们不拥有日期，也不触发结算。
+- `TilledSoilView` 在日期变化后让旧 `wateredOnDay` 自然显示为干土，`CropView` 在不可变 `FarmState` 被替换后自动显示新成长阶段，视图之间不互相调用。
+- 阶段 7C 不加入正式确认弹窗、日期 HUD、自动存档、收获、背包或微信触控按钮。
+
 ## Event Examples
 
 - `GAME_LOADED`

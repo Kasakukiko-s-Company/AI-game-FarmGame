@@ -22,6 +22,16 @@ export interface AdvanceFarmDayResult {
   readonly state: FarmDayState;
 }
 
+export type SleepAtTileStatus =
+  | 'slept'
+  | 'not_at_sleep_point'
+  | 'invalid_crop';
+
+export interface SleepAtTileResult {
+  readonly status: SleepAtTileStatus;
+  readonly state: FarmDayState;
+}
+
 function findGrowthStageIndex(
   growthProgress: number,
   growthStages: ReadonlyArray<number>,
@@ -139,4 +149,28 @@ export function advanceFarmDay(
       },
     },
   };
+}
+
+/** Confirms sleep at the configured interaction tile and settles exactly one day. */
+export function sleepAtTile(
+  state: FarmDayState,
+  target: TileCoordinate | null,
+  sleepTile: TileCoordinate,
+  crops: ReadonlyArray<CropDefinition>,
+): SleepAtTileResult {
+  assertValidCurrentDay(state.currentDay);
+  if (
+    target === null ||
+    target.x !== sleepTile.x ||
+    target.y !== sleepTile.y
+  ) {
+    return { status: 'not_at_sleep_point', state };
+  }
+
+  const result = advanceFarmDay(state, crops);
+  if (result.status === 'invalid_crop') {
+    return { status: 'invalid_crop', state };
+  }
+
+  return { status: 'slept', state: result.state };
 }

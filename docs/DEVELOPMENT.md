@@ -107,7 +107,7 @@ $process.ExitCode
 ## Git
 
 - 当前分支：`main`
-- 远程：`origin = git@github.com:kasakukiko/AI-game-FarmGame.git`
+- 远程：`origin = git@github.com:Kasakukiko-s-Company/AI-game-FarmGame.git`
 - 工程初始化基线已在提交 `9108c8e` 中创建并推送到 `origin/main`。
 - 阶段 2 的移动切片已通过编辑器导入、组件绑定和预览验收；基线提交 `cbbfa29` 已推送到 `origin/main`。
 - 阶段 3A 的 Tiled 冒烟测试已完成 Creator 场景绑定和浏览器预览验收；基线提交 `7cfb514` 已推送到 `origin/main`。
@@ -125,5 +125,6 @@ $process.ExitCode
 - 阶段 6C 的纯作物投影、原创 `Graphics` 幼苗视图、Creator 元数据和 `Crops` 场景绑定已完成；显示、去重、拒绝路径、层级、相机尺寸和现有玩法回归均已通过浏览器验收。
 - 阶段 7A 的 `FarmDayState`、`waterTile` 与 `advanceFarmDay` 已通过 8 项目标测试；Creator 已自动生成并导入 `FarmDayCycle.ts.meta`，`Main.scene` 无改动。现有移动、碰撞、相机、耕地、播种、幼苗和调试框浏览器回归均已通过。
 - 阶段 7B 的 F 键语义、单一日期/农田拥有者、按下沿浇水适配和当前日湿土投影已通过定向测试及 Creator TypeScript 检查；Creator 已生成元数据、保存 Player 组件绑定，首次/重复/非法浇水、按住去重、输入优先级、湿土和现有玩法回归均已通过浏览器验收。
+- 阶段 7C 的 Enter 睡觉语义、配置睡觉点判定、单日结算、出生点传送和原创休息点投影已通过 76 项全量测试及 Creator TypeScript 检查；Creator 元数据、场景绑定和浏览器预览均已人工验收。
 
 不要提交 AppSecret、登录凭据、二维码、`.env`、构建缓存或来源不明素材。

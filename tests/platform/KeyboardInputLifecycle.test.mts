@@ -56,3 +56,18 @@ test('maps F to the semantic watering action', async () => {
     'KeyboardInputBridge must retain KEY_F key-down events.',
   );
 });
+
+test('maps Enter to the semantic sleep action', async () => {
+  const source = await readFile(BRIDGE_SOURCE_URL, 'utf8');
+
+  assert.match(
+    source,
+    /sleepAction:\s*this\.isHeld\(KeyCode\.ENTER\)/,
+    'KeyboardInputBridge must expose Enter through InputSnapshot.sleepAction.',
+  );
+  assert.match(
+    source,
+    /keyCode\s*===\s*KeyCode\.ENTER/,
+    'KeyboardInputBridge must retain ENTER key-down events.',
+  );
+});

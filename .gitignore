@@ -10,6 +10,7 @@
 /profiles/
 /native/engine/android/**/*/assets
 /logs/
+/settings/v2/packages/cocos-service.json
 *.log
 
 #//////////////////////////

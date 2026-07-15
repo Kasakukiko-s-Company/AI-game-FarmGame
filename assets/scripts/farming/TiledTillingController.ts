@@ -6,6 +6,7 @@ import {
   TiledLayer,
   TiledMap,
   UITransform,
+  Vec3,
   warn,
 } from 'cc';
 import type {
@@ -22,8 +23,10 @@ import {
   type TillingUpdateResult,
 } from './FarmState';
 import {
+  sleepAtTile,
   waterTile,
   type FarmDayState,
+  type SleepAtTileResult,
   type WaterTileResult,
 } from './FarmDayCycle';
 import {
@@ -33,8 +36,10 @@ import {
 } from '../world/TileFarmability';
 import {
   getFacingTile,
+  tileToWorldCenter,
   type TileCoordinate,
   type TileGridGeometry,
+  type WorldPoint,
 } from '../world/TileInteraction';
 import {
   plantCrop,
@@ -46,6 +51,7 @@ const { ccclass, property, requireComponent } = _decorator;
 
 interface TillingSetup {
   readonly controller: PlayerController;
+  readonly definition: MapDefinition;
   readonly map: TiledMap;
   readonly mapTransform: UITransform;
   readonly farmability: TileFarmabilityMap;
@@ -58,6 +64,11 @@ export interface FacingPlantCropResult extends PlantCropResult {
 
 export interface FacingWaterTileResult extends WaterTileResult {
   readonly target: TileCoordinate | null;
+}
+
+export interface FacingSleepResult extends SleepAtTileResult {
+  readonly target: TileCoordinate | null;
+  readonly spawnWorldPosition: WorldPoint | null;
 }
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
@@ -137,6 +148,11 @@ export class TiledTillingController extends Component {
     return this.findMapDefinition()?.farmableArea ?? null;
   }
 
+  /** Exposes only the configured interaction point needed by a read-only view. */
+  public get sleepTile(): TilePointData | null {
+    return this.findMapDefinition()?.sleepTile ?? null;
+  }
+
   /** Applies planting to this component's authoritative FarmState. */
   public plantFacingCrop(
     seeds: SeedStack,
@@ -176,6 +192,47 @@ export class TiledTillingController extends Component {
       farm: result.state.farm,
     };
     return { ...result, target };
+  }
+
+  /** Settles one day at the configured sleep point and supplies the safe spawn. */
+  public sleepFacingTile(
+    crops: ReadonlyArray<CropDefinition>,
+  ): FacingSleepResult | null {
+    const setup = this.getSetup();
+    if (setup === null) {
+      return null;
+    }
+
+    const spawnLocal = tileToWorldCenter(setup.definition.spawnTile, setup.grid);
+    if (spawnLocal === null) {
+      return null;
+    }
+
+    const spawnWorld = setup.mapTransform.convertToWorldSpaceAR(
+      new Vec3(spawnLocal.x, spawnLocal.y, 0),
+    );
+    const target = this.getFacingTarget(setup);
+    const result = sleepAtTile(
+      this.farmDayState,
+      target,
+      setup.definition.sleepTile,
+      crops,
+    );
+    if (result.status === 'slept') {
+      this.currentDayValue = result.state.currentDay;
+      this.session = {
+        ...this.session,
+        farm: result.state.farm,
+      };
+    }
+
+    return {
+      ...result,
+      target,
+      spawnWorldPosition: result.status === 'slept'
+        ? { x: spawnWorld.x, y: spawnWorld.y }
+        : null,
+    };
   }
 
   protected override onLoad(): void {
@@ -273,6 +330,7 @@ export class TiledTillingController extends Component {
 
     return {
       controller,
+      definition,
       map,
       mapTransform,
       farmability,

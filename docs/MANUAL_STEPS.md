@@ -8,7 +8,120 @@
 
 阶段 2 已完成。代码、自动化测试、Cocos Creator 3.8.8 脚本导入、组件绑定和浏览器预览均已通过验收。
 
-阶段 3A、阶段 3B、阶段 3C、阶段 4A～4D、阶段 5A～5C、阶段 6A～6C 和阶段 7A～7B 均已完成。当前等待建立阶段 7B Git 基线；阶段 7C 只在收到明确指令后开始。
+阶段 3A、阶段 3B、阶段 3C、阶段 4A～4D、阶段 5A～5C、阶段 6A～6C 和阶段 7A～7C 均已完成。当前等待用户决定是否建立阶段 7C Git 基线。
+
+## 阶段 7C：睡觉与跨天结算（已完成）
+
+本切片让 Player 在室外休息点前短按 Enter，结算当前日并进入下一天。成功后 Player 会回到出生点；当天湿土变干，已浇水作物成长，未浇水作物停长但不会消失。它不加入正式确认弹窗、日期 HUD、存档、收获或微信触控按钮。
+
+### A. 刷新并确认新脚本
+
+1. 停止浏览器预览，回到 **Cocos Creator 3.8.8**。
+2. 点击资源管理器右上角圆形 **刷新** 按钮，等待脚本编译和资源导入完成。
+3. 展开 `assets → scripts → farming`，确认出现：
+   - `SleepPointProjection`
+   - `SleepPointView`
+   - `TiledSleepingController`
+4. `SleepPointProjection` 是纯 TypeScript 投影规则，不能添加为组件；只需要确认它成功导入。
+5. 确认三个新脚本对应的 `.meta` 均由 Creator 自动生成。不要自行创建 `.meta`，不要复制其他脚本 UUID。
+6. 查看 Creator 底部 Console，确认没有新的红色脚本错误；TMX 1.10 已知提示可以保留。
+
+### B. 给 Player 添加睡觉输入组件
+
+1. 在层级管理器展开 `Main → Canvas`，单击现有 `Player` 节点。
+2. 在属性检查器滚动到底部，点击 **添加组件**。
+3. 搜索并添加 `TiledSleepingController`。
+4. 在新组件的 **Crops Data** 属性中，从资源管理器拖入 `assets/data/crops.json`；属性框通常显示为 `crops`。
+5. 该组件没有 Tiled Map、Map Id 或出生点输入框；它会复用 Player 上已有的 `TiledTillingController`，不要再添加第二个状态所有者。
+6. 确认 Player 只存在一个 `TiledSleepingController`，然后按 `Ctrl+S` 保存。
+
+### C. 创建室外休息点显示节点
+
+1. 在层级管理器右键 `Canvas`，选择 **创建空节点 / Create Empty Node**，命名为 `SleepPoint`。
+2. 把 `SleepPoint` 拖到 `Crops` 后面、`Player` 前面。建议最终顺序为：
+
+   ```text
+   Camera
+   World
+   TilledSoil
+   Crops
+   SleepPoint
+   Player
+   InteractionDebug
+   ```
+
+3. 选中 `SleepPoint`，设置：
+   - Position：`X=0`、`Y=0`、`Z=0`
+   - Scale：`X=1`、`Y=1`
+   - Layer：`UI_2D`
+4. 点击 **添加组件**，搜索并添加 `SleepPointView`。
+5. `cc.Graphics` 应由 `requireComponent` 自动添加；如果已经存在，不要再添加第二个 Graphics。
+6. 在 `SleepPointView` 中绑定：
+   - **Source**：从层级管理器拖入 `Player`
+   - **Tiled Map**：从层级管理器拖入 `World`
+7. 按 `Ctrl+S` 保存 `Main.scene`，等待导入与编译任务结束。
+
+### D. 浏览器预览验收
+
+1. 清空 Creator Console 的旧记录，点击顶部预览按钮；浏览器打开后单击游戏画面取得键盘焦点。
+2. 打开浏览器开发者工具 Console。运行时动作日志通常显示在浏览器 Console，而不是 Creator 底部 Console。
+3. 确认地图上方区域出现一个深蓝色、金色描边的室外休息垫标记。它来自 `maps.json` 的 `sleepTile=(15,22)`。
+4. 先在远离休息点的位置短按 Enter：
+   - 应记录 `not_at_sleep_point`
+   - 日期仍为 `day=1`
+   - Player 不应传送
+5. 准备两块测试地：
+   - 第一块：空格锄地、E 播种、F 浇水
+   - 第二块：空格锄地、E 播种，但不浇水
+6. 移动到休息点相邻格并面对休息垫。推荐站在休息点下方，角色朝上；黄色目标框应覆盖休息垫所在格。
+7. 松开移动键后短按一次 Enter。应记录类似：
+
+   ```text
+   [TiledSleepingController] slept day 1 -> 2; target=(15, 22).
+   ```
+
+8. 成功后确认：
+   - Player 自动回到 `spawnTile=(15,18)` 附近
+   - 原湿土恢复为干燥深棕色
+   - 已浇水雾叶草进入下一视觉阶段
+   - 未浇水雾叶草保持原成长阶段，但不消失、不枯死
+9. 在出生点立即再次短按 Enter，应记录 `not_at_sleep_point` 且仍为 `day=2`，不能直接跳到第 3 天。
+10. 再次走回休息点，按住 Enter 不松开，只能结算一次；松开后若仍想验证下一天，需要重新处于正确相邻格并再次短按。
+11. 可选输入优先级检查：同时按空格和 Enter 时只执行锄地；同时按 E/F/Enter 时睡觉应让位于播种或浇水。优先级为锄地 > 播种 > 浇水 > 睡觉。
+12. 回归检查 WASD、方向键、石墙碰撞、相机边界、横屏尺寸、锄地、播种、浇水、黄色/蓝色调试框和视觉层级。
+13. 返回 Creator，确认除 TMX 1.10 已知提示外没有新的项目错误或重复警告。浏览器扩展产生的 QoderWork/Immersive Translate 连接失败不属于项目。
+
+完成后回复：
+
+```text
+SleepPointProjection / SleepPointView / TiledSleepingController 导入：成功/失败
+三个新 .meta：自动生成/未生成
+Player 添加 TiledSleepingController：成功/失败
+Crops Data：crops/未绑定
+SleepPoint 节点与组件：成功/失败
+Source：Player/其他
+Tiled Map：World/其他
+远离睡觉点 Enter：not_at_sleep_point 且日期不变/异常
+正确位置 Enter：slept day 1 -> 2/异常
+成功后传送出生点：正常/异常
+湿土次日变干：正常/异常
+已浇水作物成长：正常/异常
+未浇水作物停长且不枯死：正常/异常
+出生点再次 Enter 不跳日：正常/异常
+按住 Enter 不重复：正常/异常
+空格/E/F/Enter 优先级：正常/异常
+移动、碰撞、相机、耕种与调试框回归：正常/异常
+除 TMX 1.10 已知提示外的新错误：无/完整内容
+```
+
+### E. 验收记录（2026-07-15）
+
+- `SleepPointProjection`、`SleepPointView`、`TiledSleepingController` 导入成功，三个 `.meta` 均由 Creator 3.8.8 自动生成且 UUID 唯一。
+- Player 已添加 `TiledSleepingController` 并绑定 `Crops Data=crops`；`SleepPoint` 节点已添加 `SleepPointView`，`Source=Player`、`Tiled Map=World`，场景由 Creator 保存。
+- 远离睡觉点 Enter 返回 `not_at_sleep_point` 且日期不变；正确位置 Enter 成功执行 `slept day 1 -> 2` 并传送出生点。
+- 湿土次日变干，已浇水作物成长，未浇水作物停长且不枯死。
+- 出生点再次 Enter 不跳日、按住 Enter 不重复，空格/E/F/Enter 优先级正常。
+- 移动、碰撞、相机、耕种和黄色/蓝色调试框回归正常；除 TMX 1.10 已知提示外没有项目新错误。
 
 ## 阶段 7B：浇水输入与湿土视觉（已完成）
 

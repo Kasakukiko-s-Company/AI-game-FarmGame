@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   advanceFarmDay,
+  sleepAtTile,
   waterTile,
   type FarmDayState,
 } from '../../assets/scripts/farming/FarmDayCycle.ts';
@@ -421,4 +422,129 @@ test('rejects invalid day counters at both public rule entry points', () => {
       { name: 'RangeError', message: 'currentDay must be a positive integer' },
     );
   }
+});
+
+test('sleeps only when the interaction target matches the configured sleep tile', () => {
+  const wrongTile = sleepAtTile(
+    DAY_ONE_FARM,
+    { x: 14, y: 22 },
+    { x: 15, y: 22 },
+    [MISTLEAF],
+  );
+  const noTarget = sleepAtTile(
+    DAY_ONE_FARM,
+    null,
+    { x: 15, y: 22 },
+    [MISTLEAF],
+  );
+
+  assert.deepEqual(
+    {
+      statuses: [wrongTile.status, noTarget.status],
+      reusesSource: [
+        wrongTile.state === DAY_ONE_FARM,
+        noTarget.state === DAY_ONE_FARM,
+      ],
+    },
+    {
+      statuses: ['not_at_sleep_point', 'not_at_sleep_point'],
+      reusesSource: [true, true],
+    },
+  );
+});
+
+test('sleeping at the configured point settles exactly one day', () => {
+  const source: FarmDayState = {
+    currentDay: 3,
+    farm: {
+      mapId: 'mvp_farm',
+      tiles: [
+        {
+          x: 12,
+          y: 13,
+          isTilled: true,
+          wateredOnDay: 3,
+          crop: {
+            cropId: 'mistleaf',
+            plantedOnDay: 3,
+            growthProgress: 0,
+            stageIndex: 0,
+            lastGrowthDay: 2,
+          },
+        },
+      ],
+    },
+  };
+
+  const result = sleepAtTile(
+    source,
+    { x: 15, y: 22 },
+    { x: 15, y: 22 },
+    [MISTLEAF],
+  );
+
+  assert.deepEqual(
+    {
+      status: result.status,
+      currentDay: result.state.currentDay,
+      crop: result.state.farm.tiles[0]?.crop,
+      sourceDay: source.currentDay,
+    },
+    {
+      status: 'slept',
+      currentDay: 4,
+      crop: {
+        cropId: 'mistleaf',
+        plantedOnDay: 3,
+        growthProgress: 1,
+        stageIndex: 1,
+        lastGrowthDay: 3,
+      },
+      sourceDay: 3,
+    },
+  );
+});
+
+test('sleeping rejects unknown crop data without advancing any state', () => {
+  const source: FarmDayState = {
+    currentDay: 1,
+    farm: {
+      mapId: 'mvp_farm',
+      tiles: [
+        {
+          x: 12,
+          y: 13,
+          isTilled: true,
+          wateredOnDay: 1,
+          crop: {
+            cropId: 'missing_crop',
+            plantedOnDay: 1,
+            growthProgress: 0,
+            stageIndex: 0,
+            lastGrowthDay: 0,
+          },
+        },
+      ],
+    },
+  };
+
+  const result = sleepAtTile(
+    source,
+    { x: 15, y: 22 },
+    { x: 15, y: 22 },
+    [MISTLEAF],
+  );
+
+  assert.deepEqual(
+    {
+      status: result.status,
+      reusesSource: result.state === source,
+      currentDay: result.state.currentDay,
+    },
+    {
+      status: 'invalid_crop',
+      reusesSource: true,
+      currentDay: 1,
+    },
+  );
 });

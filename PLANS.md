@@ -89,7 +89,7 @@ references/
 - 建立职责目录、严格 TypeScript 配置、五个平台接口、Desktop/WeChat 平台边界、内存/空实现适配器、版本化单槽存档模型。
 - 建立 `items.json`、`tools.json`、`crops.json`、`maps.json`、`localization.json` 和配套 TypeScript 类型/跨文件校验器。
 - 使用 Creator 自带 TypeScript 5.8.2 执行项目级 `--noEmit` 检查并通过；JSON 解析、引用关系、30×30 地图、32 像素瓦片和 10×10 可耕作区检查通过。
-- 初始化本地 Git `main` 分支，并设置 `origin` 为 `git@github.com:kasakukiko/AI-game-FarmGame.git`；没有提交、联网读取远程或推送。
+- 初始化本地 Git `main` 分支；`origin` 后续已按用户授权迁移为 `git@github.com:Kasakukiko-s-Company/AI-game-FarmGame.git`。
 
 人工验收进度：
 
@@ -428,7 +428,7 @@ references/
 
 ## 阶段 7：浇水、睡觉与跨天
 
-状态：`[~]`，阶段 7A“纯浇水与单日结算规则”和阶段 7B“浇水输入/湿土视觉”已完成；阶段 7C 睡觉点/跨天适配尚未开始。
+状态：`[x]`，阶段 7A“纯浇水与单日结算规则”、阶段 7B“浇水输入/湿土视觉”和阶段 7C“睡觉与跨天结算”均已完成。
 
 范围：已耕地浇水、每日浇水标记、睡觉确认、日结束结算、次日重置、作物成长。
 
@@ -459,6 +459,20 @@ references/
 - 浏览器已实测首次浇水、同日重复、未耕拒绝、按住去重和空格/E/F 优先级；湿土不叠加，移动、碰撞、相机、锄地、播种和视觉层级回归正常。
 - 浏览器扩展的 QoderWork/Immersive Translate 连接提示不属于项目；除 TMX 1.10 已知提示外没有项目新错误。
 - 本切片不推进日期、不结算成长、不加入睡觉点、水壶容量、工具栏、存档或触控按钮 UI。
+
+2026-07-15 阶段 7C 完成记录：
+
+- `InputSnapshot.sleepAction` 提供平台无关的睡觉确认语义；PC 的 `KeyboardInputBridge` 暂映射 Enter。
+- `sleepAtTile` 只允许正前方目标等于 `maps.json.sleepTile` 时调用既有单日结算；错误位置和未知作物都不改变日期或农田状态。
+- `TiledTillingController.sleepFacingTile()` 继续独占日期与农田状态；成功时一次性替换两者，并提供配置出生点的世界坐标。
+- 新增 `TiledSleepingController`：按下沿去重、动作优先级、严格 crops JSON 解码、跨天日志和成功后的出生点传送均集中在该 adapter。
+- 新增纯 `SleepPointProjection` 与原创 `SleepPointView`，从 `maps.json.sleepTile=(15,22)` 绘制室外休息标记；场景节点与绑定必须由 Creator 完成。
+- 成功睡觉后传送到 `spawnTile=(15,18)`，因此不会停留在睡觉点连续跳日；湿土和作物视图通过同一权威快照自动刷新。
+- 20 项阶段定向测试、76 项全量测试和 Creator TypeScript 5.8.2 严格检查均已通过。
+- Creator 3.8.8 已自动生成并导入三个 `.meta`：`SleepPointProjection` UUID=`67acf03a-48e2-46be-ad64-dbc378234100`、`SleepPointView` UUID=`d6a0b1f4-0e30-4546-ae89-8e7528bbcaaf`、`TiledSleepingController` UUID=`381f3914-a259-43c8-a1b9-418cdd112273`；全资源 UUID 无重复。
+- `Main.scene` 已由 Creator 保存 Player 的 `TiledSleepingController/Crops Data`，以及位于 `Crops` 与 `Player` 之间的 `SleepPoint` 节点、`SleepPointView`、Source=Player、Tiled Map=World。
+- 浏览器已实测错误位置不跨天、正确位置 day 1→2、出生点传送、湿土次日变干、已浇水成长、未浇水停长不枯死、按住和出生点重复 Enter 不跳日；全部输入优先级和现有移动/碰撞/相机/耕种/调试框回归正常。
+- 除 TMX 1.10 已知提示外没有项目新错误。
 
 ## 阶段 8：收获、背包与快捷栏
 
