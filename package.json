@@ -8,6 +8,7 @@
     "test:crop-actions": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/data/ItemDataDecoder.test.mts tests/farming/CropInventoryActions.test.mts tests/farming/TiledPlantingAdapter.test.mts",
     "test:harvesting": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/farming/CropHarvesting.test.mts",
     "test:inventory": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/inventory/*.test.mts",
+    "test:quickbar": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/inventory/Quickbar.test.mts tests/inventory/QuickbarAdapter.test.mts tests/platform/KeyboardInputLifecycle.test.mts tests/farming/CropInventoryActions.test.mts tests/player/CocosComponentMetadata.test.mts",
     "test:platform": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/platform/*.test.mts",
     "test:player": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/player/PlayerMovement.test.mts",
     "test:world": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/world/TiledSmokeMap.test.mts tests/world/GridCollision.test.mts tests/world/CameraBounds.test.mts tests/world/TileInteraction.test.mts"

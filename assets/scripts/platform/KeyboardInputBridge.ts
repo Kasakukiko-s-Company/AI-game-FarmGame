@@ -13,6 +13,17 @@ import { NEUTRAL_INPUT } from './PlatformContracts';
 
 const { ccclass, requireComponent } = _decorator;
 
+const QUICKBAR_KEY_CODES: ReadonlyArray<KeyCode> = [
+  KeyCode.DIGIT_1,
+  KeyCode.DIGIT_2,
+  KeyCode.DIGIT_3,
+  KeyCode.DIGIT_4,
+  KeyCode.DIGIT_5,
+  KeyCode.DIGIT_6,
+  KeyCode.DIGIT_7,
+  KeyCode.DIGIT_8,
+];
+
 /** Converts Cocos keyboard events into the shared semantic input contract. */
 @ccclass('KeyboardInputBridge')
 @requireComponent(PlayerController)
@@ -51,6 +62,7 @@ export class KeyboardInputBridge extends Component implements IInputService {
       secondaryAction: this.isHeld(KeyCode.KEY_E),
       wateringAction: this.isHeld(KeyCode.KEY_F),
       sleepAction: this.isHeld(KeyCode.ENTER),
+      quickbarSlotIndex: this.getQuickbarSlotIndex(),
     };
   }
 
@@ -73,6 +85,11 @@ export class KeyboardInputBridge extends Component implements IInputService {
     return this.heldKeys.has(keyCode);
   }
 
+  private getQuickbarSlotIndex(): number | null {
+    const slotIndex = QUICKBAR_KEY_CODES.findIndex((keyCode) => this.isHeld(keyCode));
+    return slotIndex < 0 ? null : slotIndex;
+  }
+
   private isSupportedKey(keyCode: KeyCode): boolean {
     return keyCode === KeyCode.KEY_A ||
       keyCode === KeyCode.KEY_D ||
@@ -85,6 +102,7 @@ export class KeyboardInputBridge extends Component implements IInputService {
       keyCode === KeyCode.SPACE ||
       keyCode === KeyCode.KEY_E ||
       keyCode === KeyCode.KEY_F ||
-      keyCode === KeyCode.ENTER;
+      keyCode === KeyCode.ENTER ||
+      QUICKBAR_KEY_CODES.some((candidate) => candidate === keyCode);
   }
 }

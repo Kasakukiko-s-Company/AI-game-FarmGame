@@ -150,10 +150,17 @@ MVP 不实现耐久、升级、水量或范围强化。
     "timeOfDay": 480
   },
   "inventory": {
-    "capacity": 12,
-    "selectedSlot": 0,
+    "capacity": 8,
+    "selectedSlotIndex": 0,
     "slots": [
-      { "itemId": "mistleaf_seed", "quantity": 3 }
+      { "itemId": "hoe_basic", "quantity": 1 },
+      { "itemId": "watering_can_basic", "quantity": 1 },
+      { "itemId": "mistleaf_seed", "quantity": 3 },
+      null,
+      null,
+      null,
+      null,
+      null
     ]
   },
   "farm": {
@@ -182,7 +189,7 @@ MVP 不实现耐久、升级、水量或范围强化。
 }
 ```
 
-当前存档类型把 `player.position` 保留为与渲染解耦的二维数值；在阶段 2/4 固定坐标转换规则后，再明确它代表世界坐标还是“瓦片 + 局部偏移”。农田始终保存整数瓦片坐标。
+当前存档类型把 `player.position` 保留为与渲染解耦的二维数值；在阶段 2/4 固定坐标转换规则后，再明确它代表世界坐标还是“瓦片 + 局部偏移”。农田始终保存整数瓦片坐标。MVP 背包固定为 8 格且全部同时构成快捷栏；`selectedSlotIndex` 使用零基索引并必须指向现有槽位。
 
 ## Required Validation
 

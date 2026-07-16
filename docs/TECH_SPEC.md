@@ -364,6 +364,18 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 - 历史命名的 `TiledPlantingController` 现在只负责 E 的按下沿、crops JSON 解码、输入优先级和开发日志；它不再拥有临时 `SeedStack`。E 仍是 `secondaryAction`，所以 PC 与后续微信触控共享相同语义。
 - 本阶段保持空格锄地 > E 播种/收获 > F 浇水 > Enter 睡觉。快捷栏 UI、选槽输入以及由选中物品路由工具动作留到阶段 8D。
 
+## Quickbar Selection and Item-Driven Actions
+
+阶段 8D 让 `InventoryState.selectedSlotIndex` 真正参与输入与玩法路由，同时不增加第二个库存拥有者：
+
+- `Quickbar` 纯 module 负责三件事：把固定库存投影为有序槽位、把一个槽位物品分类为用途、对直接/前一格/后一格选择做按下沿归约。它不知道 Cocos 节点或具体输入设备。
+- `InputSnapshot.quickbarSlotIndex` 表示“本帧正在请求的绝对槽位”，`null` 表示没有直接选择；PC 数字键 `1～8` 只是这个语义的一种 adapter。未来触控按钮可调用状态拥有者的 `selectQuickbarSlot`，不需要伪造键盘事件。
+- 运行时仍由 `TiledTillingController` 独占日期、农田与库存。它在动作前先提交选槽，然后用同一个 `resolveSelectedQuickbarItem` 结果门控锄地、浇水与播种。
+- 空格只在选中配置的锄头时耕地；F 只在选中配置的水壶时浇水；E 只在空已耕地且选中种子时播种。错误选择是普通玩法拒绝，返回 `wrong_tool`/`wrong_item` 且不修改状态。
+- 收获保持上下文优先：E 面对已有作物时先尝试收获或报告未成熟，不要求手持种子。因此选中收获物、工具或空槽时仍可收取成熟作物。
+- `QuickbarView` 是状态拥有者的只读投影。它绘制原创几何占位图标、槽号、数量和选中框，并用 Camera 位置与当前可见尺寸锚定在屏幕底部；它不能修改库存，也不缓存可写物品列表。
+- 快捷栏当前展示全部 8 个库存槽。阶段 9 直接序列化 `selectedSlotIndex`；阶段 10 的微信触控只需提供同一绝对选槽语义与屏幕 UI。
+
 ## Event Examples
 
 - `GAME_LOADED`

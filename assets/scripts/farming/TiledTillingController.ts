@@ -20,9 +20,19 @@ import { decodeItemsData } from '../data/ItemDataDecoder';
 import {
   addInventoryItem,
   createInventory,
+  selectInventorySlot,
   type InventoryState,
   type ItemStack,
+  type SelectInventorySlotResult,
 } from '../inventory/InventoryState';
+import {
+  RELEASED_QUICKBAR_SELECTION,
+  resolveSelectedQuickbarItem,
+  updateQuickbarSelection as reduceQuickbarSelection,
+  type QuickbarItemUse,
+  type QuickbarSelectionLatch,
+} from '../inventory/Quickbar';
+import type { InputSnapshot } from '../platform/PlatformContracts';
 import { PlayerController } from '../player/PlayerController';
 import {
   updateTillingSession,
@@ -69,14 +79,20 @@ export interface FacingCropInventoryActionResult extends CropInventoryActionResu
   readonly target: TileCoordinate | null;
 }
 
-export interface FacingWaterTileResult extends WaterTileResult {
-  readonly target: TileCoordinate | null;
-}
+export type FacingWaterTileResult =
+  | (WaterTileResult & { readonly target: TileCoordinate | null })
+  | {
+      readonly status: 'wrong_tool';
+      readonly state: FarmDayState;
+      readonly target: TileCoordinate | null;
+    };
 
 export interface FacingSleepResult extends SleepAtTileResult {
   readonly target: TileCoordinate | null;
   readonly spawnWorldPosition: WorldPoint | null;
 }
+
+export type TillingActionStatus = TillingUpdateResult['status'] | 'wrong_tool';
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === 'object' && value !== null;
@@ -145,10 +161,12 @@ export class TiledTillingController extends Component {
     farm: { mapId: 'mvp_farm', tiles: [] },
     primaryActionHeld: false,
   };
-  private actionStatus: TillingUpdateResult['status'] = 'idle';
+  private actionStatus: TillingActionStatus = 'idle';
   private currentDayValue = 1;
   private inventoryValue: InventoryState = createInventory();
   private itemDefinitionsValue: ReadonlyArray<ItemDefinition> | null = null;
+  private quickbarSelectionLatch: QuickbarSelectionLatch =
+    RELEASED_QUICKBAR_SELECTION;
   private didWarnMissingSetup = false;
 
   public get farmState(): FarmState {
@@ -163,13 +181,30 @@ export class TiledTillingController extends Component {
     };
   }
 
-  public get lastActionStatus(): TillingUpdateResult['status'] {
+  public get lastActionStatus(): TillingActionStatus {
     return this.actionStatus;
   }
 
   /** Exposes the single authoritative inventory snapshot to read-only views. */
   public get inventoryState(): InventoryState {
     return this.inventoryValue;
+  }
+
+  /** Exposes validated item definitions to read-only quickbar views. */
+  public get itemDefinitions(): ReadonlyArray<ItemDefinition> {
+    return this.itemDefinitionsValue ?? [];
+  }
+
+  /** Returns the gameplay use of the currently selected quickbar item. */
+  public get selectedQuickbarItemUse(): QuickbarItemUse {
+    return this.resolveSelectedItem().use;
+  }
+
+  /** Absolute selection seam used by future touch quickbar adapters. */
+  public selectQuickbarSlot(slotIndex: number): SelectInventorySlotResult {
+    const result = selectInventorySlot(this.inventoryValue, slotIndex);
+    this.inventoryValue = result.inventory;
+    return result;
   }
 
   /** Exposes the validated visual boundary without leaking the JSON document. */
@@ -193,13 +228,19 @@ export class TiledTillingController extends Component {
     }
 
     const target = this.getFacingTarget(setup);
+    const selected = resolveSelectedQuickbarItem(
+      this.inventoryValue,
+      items,
+      this.startingHoeItemId,
+      this.startingWateringCanItemId,
+    );
     const result = useCropInventoryAction(
       {
         farm: this.session.farm,
         inventory: this.inventoryValue,
       },
       target,
-      this.startingSeedItemId,
+      selected.use === 'plant' ? selected.stack?.itemId ?? null : null,
       this.currentDayValue,
       crops,
       items,
@@ -220,6 +261,13 @@ export class TiledTillingController extends Component {
     }
 
     const target = this.getFacingTarget(setup);
+    if (this.resolveSelectedItem().use !== 'water') {
+      return {
+        status: 'wrong_tool',
+        state: this.farmDayState,
+        target,
+      };
+    }
     const result = waterTile(this.farmDayState, target);
     this.session = {
       ...this.session,
@@ -277,6 +325,7 @@ export class TiledTillingController extends Component {
       farm: { mapId: this.mapId, tiles: [] },
       primaryActionHeld: false,
     };
+    this.quickbarSelectionLatch = RELEASED_QUICKBAR_SELECTION;
     this.initializeInventory();
   }
 
@@ -290,11 +339,18 @@ export class TiledTillingController extends Component {
       primaryActionHeld: false,
     };
     this.controller = null;
+    this.quickbarSelectionLatch = RELEASED_QUICKBAR_SELECTION;
     this.didWarnMissingSetup = false;
   }
 
   protected override update(): void {
-    const primaryAction = this.controller?.getInputSnapshot().primaryAction ?? false;
+    const snapshot = this.controller?.getInputSnapshot();
+    if (snapshot === undefined) {
+      return;
+    }
+    this.applyQuickbarSelectionInput(snapshot);
+
+    const primaryAction = snapshot.primaryAction;
     if (!primaryAction || this.session.primaryActionHeld) {
       this.session = updateTillingSession(
         this.session,
@@ -302,6 +358,18 @@ export class TiledTillingController extends Component {
         null,
         () => false,
       ).session;
+      return;
+    }
+
+    if (this.resolveSelectedItem().use !== 'till') {
+      this.session = updateTillingSession(
+        this.session,
+        true,
+        null,
+        () => false,
+      ).session;
+      this.actionStatus = 'wrong_tool';
+      log('[TiledTillingController] wrong_tool; select the hoe quickbar slot.');
       return;
     }
 
@@ -331,6 +399,38 @@ export class TiledTillingController extends Component {
     log(
       `[TiledTillingController] ${result.status} tile ` +
       `(${target?.x ?? '-'}, ${target?.y ?? '-'}).`,
+    );
+  }
+
+  /** Idempotently applies this frame's selection before sibling action adapters run. */
+  public applyQuickbarSelectionInput(snapshot: InputSnapshot): void {
+    const result = reduceQuickbarSelection(
+      this.inventoryValue,
+      this.quickbarSelectionLatch,
+      {
+        directSlotIndex: snapshot.quickbarSlotIndex,
+        selectPrevious: snapshot.selectPrevious,
+        selectNext: snapshot.selectNext,
+      },
+    );
+    this.inventoryValue = result.inventory;
+    this.quickbarSelectionLatch = result.latch;
+    if (result.status === 'selected') {
+      const selected = this.resolveSelectedItem();
+      log(
+        `[TiledTillingController] selected quickbar slot ` +
+        `${result.inventory.selectedSlotIndex + 1}; ` +
+        `item=${selected.stack?.itemId ?? '-'}.`,
+      );
+    }
+  }
+
+  private resolveSelectedItem(): ReturnType<typeof resolveSelectedQuickbarItem> {
+    return resolveSelectedQuickbarItem(
+      this.inventoryValue,
+      this.itemDefinitionsValue ?? [],
+      this.startingHoeItemId,
+      this.startingWateringCanItemId,
     );
   }
 

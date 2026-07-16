@@ -44,7 +44,11 @@ export class TiledPlantingController extends Component {
 
   protected override update(): void {
     const snapshot = this.controller?.getInputSnapshot();
-    if (snapshot === undefined || !snapshot.secondaryAction) {
+    if (snapshot === undefined) {
+      return;
+    }
+    this.stateOwner?.applyQuickbarSelectionInput(snapshot);
+    if (!snapshot.secondaryAction) {
       this.secondaryActionHeld = false;
       return;
     }

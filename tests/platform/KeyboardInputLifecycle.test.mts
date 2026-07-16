@@ -71,3 +71,20 @@ test('maps Enter to the semantic sleep action', async () => {
     'KeyboardInputBridge must retain ENTER key-down events.',
   );
 });
+
+test('maps number keys 1 through 8 to a zero-based quickbar slot', async () => {
+  const source = await readFile(BRIDGE_SOURCE_URL, 'utf8');
+
+  for (let digit = 1; digit <= 8; digit += 1) {
+    assert.match(
+      source,
+      new RegExp(`KeyCode\\.DIGIT_${digit}`),
+      `KeyboardInputBridge must retain number key ${digit}.`,
+    );
+  }
+  assert.match(
+    source,
+    /quickbarSlotIndex:\s*this\.getQuickbarSlotIndex\(\)/,
+    'KeyboardInputBridge must expose direct selection through the semantic snapshot.',
+  );
+});

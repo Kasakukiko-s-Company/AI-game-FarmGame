@@ -181,6 +181,39 @@ test('keeps both states unchanged for immature crops and missing seeds', () => {
   assert.equal(noSeedResult.state, emptyInventory);
 });
 
+test('requires a selected seed only when planting empty soil', () => {
+  const emptySoil = {
+    farm: farmWithCrop(null),
+    inventory: startingInventory(),
+  };
+  const matureCrop = {
+    farm: farmWithCrop(3),
+    inventory: startingInventory(),
+  };
+
+  const rejectedPlanting = useCropInventoryAction(
+    emptySoil,
+    { x: 4, y: 5 },
+    null,
+    4,
+    [MISTLEAF],
+    ITEMS,
+  );
+  const harvestedWithoutSeed = useCropInventoryAction(
+    matureCrop,
+    { x: 4, y: 5 },
+    null,
+    4,
+    [MISTLEAF],
+    ITEMS,
+  );
+
+  assert.equal(rejectedPlanting.status, 'wrong_item');
+  assert.equal(rejectedPlanting.state, emptySoil);
+  assert.equal(harvestedWithoutSeed.status, 'harvested');
+  assert.equal(harvestedWithoutSeed.state.farm.tiles[0]?.crop, null);
+});
+
 test('does not remove a mature crop when the complete yield cannot fit', () => {
   const fullInventory: InventoryState = {
     slots: [

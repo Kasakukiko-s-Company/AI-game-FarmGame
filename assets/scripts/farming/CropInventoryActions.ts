@@ -13,7 +13,8 @@ import { plantCrop, type PlantCropStatus } from './CropPlanting';
 
 export type CropInventoryActionStatus =
   | Exclude<HarvestCropStatus, 'no_crop'>
-  | PlantCropStatus;
+  | PlantCropStatus
+  | 'wrong_item';
 
 export interface CropInventoryActionResult {
   readonly status: CropInventoryActionStatus;
@@ -42,7 +43,7 @@ function rejectCropAction(
 export function useCropInventoryAction(
   state: HarvestState,
   target: TileCoordinate | null,
-  seedItemId: string,
+  seedItemId: string | null,
   currentDay: number,
   crops: ReadonlyArray<CropDefinition>,
   items: ReadonlyArray<ItemDefinition>,
@@ -58,6 +59,10 @@ export function useCropInventoryAction(
   }
   if (harvest.status !== 'no_crop') {
     return rejectCropAction(harvest.status, state);
+  }
+
+  if (seedItemId === null) {
+    return rejectCropAction('wrong_item', state);
   }
 
   const seed: ItemStack = { itemId: seedItemId, quantity: 1 };

@@ -37,6 +37,7 @@ export interface InputSnapshot {
   readonly secondaryAction: boolean;
   readonly wateringAction: boolean;
   readonly sleepAction: boolean;
+  readonly quickbarSlotIndex: number | null;
   readonly selectPrevious: boolean;
   readonly selectNext: boolean;
   readonly pause: boolean;
@@ -104,6 +105,7 @@ export const NEUTRAL_INPUT: InputSnapshot = Object.freeze({
   secondaryAction: false,
   wateringAction: false,
   sleepAction: false,
+  quickbarSlotIndex: null,
   selectPrevious: false,
   selectNext: false,
   pause: false,

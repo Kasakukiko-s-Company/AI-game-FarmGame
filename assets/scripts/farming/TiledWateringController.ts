@@ -5,8 +5,10 @@ import {
   warn,
 } from 'cc';
 import { PlayerController } from '../player/PlayerController';
-import type { WaterTileStatus } from './FarmDayCycle';
-import { TiledTillingController } from './TiledTillingController';
+import {
+  TiledTillingController,
+  type FacingWaterTileResult,
+} from './TiledTillingController';
 
 const { ccclass, requireComponent } = _decorator;
 
@@ -17,10 +19,10 @@ export class TiledWateringController extends Component {
   private controller: PlayerController | null = null;
   private stateOwner: TiledTillingController | null = null;
   private wateringActionHeld = false;
-  private actionStatus: WaterTileStatus | 'idle' = 'idle';
+  private actionStatus: FacingWaterTileResult['status'] | 'idle' = 'idle';
   private didWarnInvalidSetup = false;
 
-  public get lastActionStatus(): WaterTileStatus | 'idle' {
+  public get lastActionStatus(): FacingWaterTileResult['status'] | 'idle' {
     return this.actionStatus;
   }
 
@@ -38,7 +40,11 @@ export class TiledWateringController extends Component {
 
   protected override update(): void {
     const snapshot = this.controller?.getInputSnapshot();
-    if (snapshot === undefined || !snapshot.wateringAction) {
+    if (snapshot === undefined) {
+      return;
+    }
+    this.stateOwner?.applyQuickbarSelectionInput(snapshot);
+    if (!snapshot.wateringAction) {
       this.wateringActionHeld = false;
       return;
     }

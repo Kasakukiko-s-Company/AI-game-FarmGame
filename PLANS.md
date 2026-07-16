@@ -496,7 +496,7 @@ references/
 
 ## 阶段 8：收获、背包与快捷栏
 
-状态：`[~]`，阶段 8A～8B 已完成并推送基线；阶段 8C“收获输入与真实背包适配”已完成并通过 Creator 场景绑定与浏览器预览验收，等待建立 Git 基线；阶段 8D 尚未开始。
+状态：`[x]`，阶段 8A～8C 已完成并推送基线；阶段 8D“快捷栏显示、槽位选择以及选中物品驱动操作”已完成代码、Creator 场景绑定和浏览器预览验收，等待建立 Git 基线。
 
 范围：锄头、水壶、种子、收获物；固定容量的简单背包；快捷栏选择；成熟作物收获。
 
@@ -549,6 +549,26 @@ references/
 - 按住 E 不重复，空格/E/F/Enter 优先级正常；移动、碰撞、相机、跨天、耕种和黄色/蓝色调试框全部回归正常。快捷栏/背包画面尚未出现符合阶段边界；除 TMX 1.10 已知提示外没有新错误。
 
 阶段 8C 完成门槛：Creator 自动导入 `ItemDataDecoder.ts` 与 `CropInventoryActions.ts` 并生成唯一 `.meta`；Player 的 `TiledTillingController.Items Data` 绑定 `items.json`；E 可从真实背包播种并收获成熟作物；现有输入、碰撞、相机、跨天和视觉回归正常，Console 无新项目错误。
+
+2026-07-16 阶段 8D 实现记录：
+
+- 新增纯 `Quickbar` module，把固定背包投影为 8 个顺序槽，并把物品解析为 `till`、`water`、`plant`、`carry` 或 `empty`；UI 和玩法动作共享同一个解析规则，不在两个地方硬编码类型判断。
+- `InputSnapshot.quickbarSlotIndex` 是平台无关的绝对选槽语义；PC `KeyboardInputBridge` 将数字键 `1～8` 映射为零基槽位。纯选择 reducer 同时保留前一格/后一格输入 seam，供后续微信触控 adapter 使用。
+- 选槽按下沿执行且不会因按住重复；同一帧先提交选槽，再处理动作。直接槽位选择优先于循环选择，循环选择在固定容量内首尾相接。
+- `TiledTillingController` 仍是唯一 `InventoryState` 拥有者：选中锄头时空格可耕地，选中水壶时 F 可浇水，选中种子时 E 可播种；错误工具/物品返回 `wrong_tool` 或 `wrong_item` 且状态不变。
+- E 面对已有作物时仍先处理作物：成熟作物可用任意选中槽收获，未成熟作物返回 `not_mature`；只有空的已耕地才要求选中种子。
+- 新增只读 `QuickbarView` Cocos 组件，使用原创 `Graphics` 几何图标绘制 8 格 HUD、选中框、槽位数字和堆叠数量；它跟随 Camera 底部，不拥有第二份背包状态，也不引入外部素材。
+- `selectQuickbarSlot(slotIndex)` 是未来触控快捷栏的绝对选择 seam；共享玩法代码不直接依赖鼠标、键盘、`wx` 或具体屏幕坐标。
+- 新增快捷栏纯规则、adapter、键盘生命周期、作物选择门控和 Creator 元数据测试；`test:quickbar` 已通过 `18/18`，全量测试已通过 `110/110`。
+- Creator 安装位置已从旧的 `C:\ProgramData\cocos\...` 迁移到 `D:\lzq\cocos\...`；当前 Creator 3.8.8 已重新打开工程并把 `temp/tsconfig.cocos.json` 刷新到有效路径，项目级 TypeScript 5.8.2 `--noEmit` 严格检查通过。
+- Creator 已自动生成并导入两个 `.meta`：`Quickbar` UUID=`a2a534be-e140-48df-bda1-b01515f03c33`、`QuickbarView` UUID=`ae2f8cda-4788-4dcc-a2f9-92f9ba3f617e`；全资源 UUID 无重复。
+- 清理临时空间后出现的一次 `msg not exist!` 已定位为 Creator 内置 `cocos-service` 的失效异步消息，不是项目脚本错误；关闭多余 Dashboard/Creator 会话、轮换旧 `project.log` 并干净重启后，新日志该错误和项目 error 计数均为 0，`Main.scene` 保持不变。
+- Creator 已保存 `Quickbar` 节点及 `QuickbarView` 组件，`Source=Player`、`Camera Node=Camera`；场景中的组件引用、8 格尺寸和底部间距均已实际写入 `Main.scene`。
+- 2026-07-16 浏览器验收通过：初始 8 格与数量显示、数字键 `1～8` 选槽、锄头/水壶/种子正确槽动作、错误槽拒绝、种子数量同步、任意槽收获和收获物进入快捷栏均正常。
+- 快捷栏随相机移动和另一横屏尺寸保持正常；移动、碰撞、跨天和黄色/蓝色调试框回归正常，除 TMX 1.10 已知提示外没有新错误。
+- 验收后再次运行阶段 8D 定向测试 `18/18` 和全量测试 `110/110`，70 个资源 UUID 无重复。严格类型检查曾在 Creator 重建缓存前通过；本次空间清理后直接复查仅因编辑器生成的 `temp/declarations` 尚未恢复而返回 TS2688，没有报告项目源码类型错误。
+
+阶段 8D 完成门槛：Creator 自动导入 `Quickbar.ts` 与 `QuickbarView.ts` 并生成唯一 `.meta`；`Main.scene` 新建并绑定 Quickbar 节点；数字键选槽、选中物品门控、快捷栏数量更新与成熟作物收获通过浏览器验收；全部自动测试和严格类型检查通过，Console 无新项目错误。
 
 ## 阶段 9：存档与读取
 

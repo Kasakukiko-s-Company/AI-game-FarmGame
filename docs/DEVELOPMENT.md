@@ -126,5 +126,10 @@ $process.ExitCode
 - 阶段 7A 的 `FarmDayState`、`waterTile` 与 `advanceFarmDay` 已通过 8 项目标测试；Creator 已自动生成并导入 `FarmDayCycle.ts.meta`，`Main.scene` 无改动。现有移动、碰撞、相机、耕地、播种、幼苗和调试框浏览器回归均已通过。
 - 阶段 7B 的 F 键语义、单一日期/农田拥有者、按下沿浇水适配和当前日湿土投影已通过定向测试及 Creator TypeScript 检查；Creator 已生成元数据、保存 Player 组件绑定，首次/重复/非法浇水、按住去重、输入优先级、湿土和现有玩法回归均已通过浏览器验收。
 - 阶段 7C 的 Enter 睡觉语义、配置睡觉点判定、单日结算、出生点传送和原创休息点投影已通过 76 项全量测试及 Creator TypeScript 检查；Creator 元数据、场景绑定和浏览器预览均已人工验收。
+- 阶段 7D 的双平台装配护栏基线提交 `4692fba` 已推送到 `origin/main`。
+- 阶段 8A 的固定容量库存规则基线提交 `1e2ae9f` 已推送到 `origin/main`。
+- 阶段 8B 的成熟作物收获事务基线提交 `73b2f18` 已推送到 `origin/main`。
+- 阶段 8C 的真实背包播种/收获适配基线提交 `0ee5d39` 已推送到 `origin/main`。
+- 阶段 8D 的快捷栏显示、数字键选槽和选中物品驱动操作已完成；Creator 已自动导入脚本、生成元数据并保存 `QuickbarView` 场景绑定，数字选槽、物品门控、数量同步、收获、相机尺寸及现有玩法回归均通过浏览器验收，110 项全量测试通过。空间清理后命令行类型复查仅受缺失的 Creator 生成 `temp/declarations` 阻塞。
 
 不要提交 AppSecret、登录凭据、二维码、`.env`、构建缓存或来源不明素材。
