@@ -327,6 +327,19 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 - `TilledSoilView` 在日期变化后让旧 `wateredOnDay` 自然显示为干土，`CropView` 在不可变 `FarmState` 被替换后自动显示新成长阶段，视图之间不互相调用。
 - 阶段 7C 不加入正式确认弹窗、日期 HUD、自动存档、收获、背包或微信触控按钮。
 
+## Inventory Rules Slice
+
+阶段 8A 先建立纯进程内库存 module，不接 Cocos 场景、输入或存档：
+
+- `InventoryState` 只包含固定长度的 `slots` 与合法的 `selectedSlotIndex`。MVP 默认 8 格，背包与快捷栏共用同一组格子，避免两份物品位置状态。
+- `ItemStack` 只保存稳定 `itemId` 与正整数 `quantity`；堆叠上限来自已校验的 `ItemDefinition.maxStack`，领域代码不硬编码工具或作物 ID。
+- `addInventoryItem` 与 `removeInventoryItem` 都是原子命令 seam：请求必须完整成功，否则返回原状态引用。这样后续收获可以在背包容量不足时保留成熟作物，不会出现部分奖励或物品丢失。
+- 添加时先填低索引已有同类堆，再占用低索引空格；移除时从低索引同类堆开始。排序规则固定，因此测试、UI 和存档结果可预测。
+- 未知动作物品是普通拒绝，返回 `invalid_item`；损坏的持久化状态或内容配置属于不变量破坏并抛出 `RangeError`，不静默修复。
+- `selectInventorySlot` 负责维护选择范围，`getSelectedItemStack` 是后续工具路由、播种和快捷栏视图共享的读取 interface。
+- 库存只有一个进程内 implementation，因此不增加 `IInventoryService` seam。阶段 9 会直接序列化 `InventoryState`，平台存储差异继续留在既有 `ISaveService` 后面。
+- 阶段 8A 不替换临时 `SeedStack`、不创建起始物品、不接快捷栏输入、不绘制 HUD，也不实现收获；集成按阶段 8B～8D 分步完成。
+
 ## Event Examples
 
 - `GAME_LOADED`

@@ -496,11 +496,26 @@ references/
 
 ## 阶段 8：收获、背包与快捷栏
 
-状态：`[ ]`
+状态：`[~]`，阶段 8A“固定容量背包与快捷栏纯规则”已完成；阶段 8B～8D 尚未开始。
 
 范围：锄头、水壶、种子、收获物；固定容量的简单背包；快捷栏选择；成熟作物收获。
 
 完成门槛：物品堆叠、容量不足、消耗种子和添加收获物的结果可预测且有测试。
+
+2026-07-16 阶段 8A 实现记录：
+
+- 新增纯 `InventoryState` module：`slots` 是固定容量的持久化物品格，`selectedSlotIndex` 始终指向其中一个格子；MVP 默认容量为 8，全部格子同时构成快捷栏。
+- `addInventoryItem` 只从已校验的 `ItemDefinition.maxStack` 读取堆叠上限，先填充已有同类堆，再使用低索引空格；请求数量必须完整容纳，否则返回 `inventory_full` 并复用原状态。
+- `removeInventoryItem` 从低索引同类堆开始扣除，只有总数量充足才返回 `removed`；不足时返回 `insufficient_item` 且不产生部分修改。
+- 未知物品返回 `invalid_item`；非法容量、数量、选择索引、重复配置、未知持久化物品或超过 `maxStack` 的损坏状态明确抛出 `RangeError`。
+- `selectInventorySlot` 对有效格返回不可变新状态，同格返回 `already_selected`，越界输入返回 `invalid_slot`；`getSelectedItemStack` 只读取当前选择。
+- 本 module 是进程内纯规则，不增加只有单一 implementation 的 `IInventoryService`，也不依赖 Cocos、平台 API 或场景节点。
+- 新增 8 项库存定向测试；`test:inventory` 已通过 `8/8`，Creator 3.8.8 TypeScript 5.8.2 严格检查已通过。
+- 本切片不替换临时 `SeedStack`、不创建初始背包、不接按键、不绘制快捷栏，也不实现收获；这些分别留给阶段 8B～8D。
+- Creator 3.8.8 已自动导入 `InventoryState.ts` 并生成 `.meta`；importer=`typescript`、imported=`true`、UUID=`47db9b39-9394-458a-81b5-cffe724561de`，全资源 UUID 无重复。
+- `Main.scene` 无新绑定；用户已完成 PC 输入和现有玩法回归，背包/快捷栏未出现符合阶段边界，除 TMX 1.10 已知提示外无新错误。
+
+阶段 8A 完成门槛：Creator 3.8.8 自动导入 `InventoryState.ts` 并生成唯一 `.meta`，`Main.scene` 无新绑定，Console 无新错误，现有 PC 玩法回归正常。
 
 ## 阶段 9：存档与读取
 
