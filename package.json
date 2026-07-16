@@ -5,6 +5,7 @@
   "scripts": {
     "generate:map-smoke": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON tools/generate-stage3-smoke-assets.mts",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test",
+    "test:harvesting": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/farming/CropHarvesting.test.mts",
     "test:inventory": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/inventory/*.test.mts",
     "test:platform": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/platform/*.test.mts",
     "test:player": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/player/PlayerMovement.test.mts",

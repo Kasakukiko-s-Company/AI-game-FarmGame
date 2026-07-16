@@ -496,7 +496,7 @@ references/
 
 ## 阶段 8：收获、背包与快捷栏
 
-状态：`[~]`，阶段 8A“固定容量背包与快捷栏纯规则”已完成；阶段 8B～8D 尚未开始。
+状态：`[~]`，阶段 8A～8B 已完成；阶段 8B“成熟作物收获与背包容量事务”已通过 Creator 导入和现有玩法回归验收；阶段 8C～8D 尚未开始。
 
 范围：锄头、水壶、种子、收获物；固定容量的简单背包；快捷栏选择；成熟作物收获。
 
@@ -516,6 +516,22 @@ references/
 - `Main.scene` 无新绑定；用户已完成 PC 输入和现有玩法回归，背包/快捷栏未出现符合阶段边界，除 TMX 1.10 已知提示外无新错误。
 
 阶段 8A 完成门槛：Creator 3.8.8 自动导入 `InventoryState.ts` 并生成唯一 `.meta`，`Main.scene` 无新绑定，Console 无新错误，现有 PC 玩法回归正常。
+
+2026-07-16 阶段 8B 实现记录：
+
+- 新增纯 `HarvestState`，把一次命令需要共同提交的 `FarmState` 与 `InventoryState` 放入一个不可变快照，不提前引入完整 `GameState` 或新状态所有者。
+- `harvestCrop(state, target, crops, items)` 是唯一公开收获命令 seam；它从作物配置读取成长阶段、收获物 ID 和产量，从物品配置读取堆叠上限，不硬编码雾叶草或数值。
+- 成熟判定复用 `calculateCropGrowthStage`：只有 `growthProgress` 达到 `growthStages` 总天数才允许收获，最终视觉阶段但尚差成长天数时仍返回 `not_mature`。
+- 成功收获先通过 `addInventoryItem` 完整加入配置产量，再把目标格 `crop` 清空；土地继续保持已耕状态，当日 `wateredOnDay` 也保留。
+- 目标缺失、空地、未成熟、背包不足、未知作物和未知物品分别返回 `not_tilled`、`no_crop`、`not_mature`、`inventory_full`、`invalid_crop` 和 `invalid_item`。
+- 所有普通失败都复用原 `HarvestState`，因此不会部分加入产物或提前清除成熟作物；损坏成长进度、非法产量或损坏库存继续明确抛出 `RangeError`。
+- 新增 Node 测试用 Creator 相对 import 解析 hook，只作用于测试运行时，不改变项目脚本的 Creator 模块写法或生产行为。
+- 新增 7 项收获事务定向测试；`test:harvesting` 已通过 `7/7`，全量测试已通过 `94/94`，Creator 3.8.8 TypeScript 5.8.2 严格检查已通过。
+- 本切片不添加收获输入、Cocos 组件、初始背包、快捷栏 HUD 或场景绑定；浏览器中实际收获留到阶段 8C～8D。
+- Creator 3.8.8 已自动导入 `CropHarvesting.ts` 并生成 `.meta`；importer=`typescript`、imported=`true`、UUID=`b1351487-86e7-4a89-a477-74e8fc65e48b`。
+- `Main.scene` 无新绑定；用户已完成 PC 输入和现有玩法回归，实际收获/背包画面未出现符合阶段边界，除 TMX 1.10 已知提示外无新错误。
+
+阶段 8B 完成门槛：Creator 3.8.8 自动导入 `CropHarvesting.ts` 并生成唯一 `.meta`，`Main.scene` 无新绑定，Console 无新错误，现有 PC 玩法回归正常。
 
 ## 阶段 9：存档与读取
 

@@ -340,6 +340,18 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 - 库存只有一个进程内 implementation，因此不增加 `IInventoryService` seam。阶段 9 会直接序列化 `InventoryState`，平台存储差异继续留在既有 `ISaveService` 后面。
 - 阶段 8A 不替换临时 `SeedStack`、不创建起始物品、不接快捷栏输入、不绘制 HUD，也不实现收获；集成按阶段 8B～8D 分步完成。
 
+## Harvest Transaction Slice
+
+阶段 8B 只增加跨农田与背包的纯收获事务，不接输入、Cocos 场景或存档：
+
+- `HarvestState` 把本次命令必须共同提交的 `FarmState` 与 `InventoryState` 配对；它不是完整运行时根状态，也不拥有生命周期。
+- `harvestCrop(state, target, crops, items)` 是单一收获 interface。implementation 内部完成目标查找、作物配置解析、成熟判定、产量解析、背包容量检查和两份新状态构造。
+- 成熟度由既有 `calculateCropGrowthStage` 根据 `growthProgress` 与 `growthStages` 计算，不信任视觉 `stageIndex` 作为可收获标志，避免最终外观提前一日可收获。
+- 收获物 ID 和数量只来自 `CropDefinition.harvestItemId/harvestQuantity`；实际堆叠继续穿过 `addInventoryItem`，因此与快捷栏、后续存档共享同一库存不变量。
+- 成功先确认全部产量能进入背包，再清空目标格作物；地块仍保持 `isTilled=true`，当日浇水标记保留。普通失败返回原 `HarvestState` 引用，调用方无法得到半完成状态。
+- `not_tilled`、`no_crop`、`not_mature`、`inventory_full`、`invalid_crop` 和 `invalid_item` 是可预期玩法拒绝；损坏计数和内容不变量继续抛出 `RangeError`。
+- 本 module 是纯进程内规则，不新增 `IHarvestService` 或 adapter。阶段 8C/8D 才建立运行时背包所有者、输入路由和 HUD。
+
 ## Event Examples
 
 - `GAME_LOADED`
