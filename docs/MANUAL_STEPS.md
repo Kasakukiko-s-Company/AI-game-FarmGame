@@ -18,7 +18,63 @@
 
 阶段 8D“快捷栏显示、槽位选择以及选中物品驱动操作”已完成并推送 Git 基线。
 
-阶段 9A“版本化存档快照与自动存档事务”已完成并通过 Creator 人工验收，等待建立 Git 基线。
+阶段 9A“版本化存档快照与自动存档事务”已完成并推送 Git 基线。
+
+阶段 9B“运行时快照采集与状态恢复”已完成并通过 Creator 人工验收，等待建立 Git 基线。
+
+## 阶段 9B：运行时快照采集与状态恢复（已完成）
+
+本切片把现有 Player、日期、农田和背包权威状态接入版本化存档，但还没有真实读写本地存储。因此本阶段不会显示“保存成功”，重新预览后仍从初始状态开始属于正常结果。
+
+### A. 刷新并确认脚本导入
+
+1. 停止浏览器预览，回到 **Cocos Creator 3.8.8**。
+2. 点击资源管理器右上角圆形 **刷新**，等待脚本编译和资源导入完成。
+3. 展开 `assets → scripts → core → save`，确认出现 **RuntimeSaveState**。
+4. 展开 `assets → scripts → save`，确认出现 **RuntimeSaveBridge**。
+5. 确认 Creator 为两个新脚本自动生成 `.meta`；新建的 `save` 文件夹如果出现文件夹 `.meta` 也属于正常结果。不要手写或复制 UUID。
+6. 查看 Creator Console：除 TMX 1.10 已知提示外，不应出现新的红色脚本错误。
+
+### B. 给 Player 添加 RuntimeSaveBridge
+
+1. 在层级管理器展开 `Main → Canvas`，选中现有 **Player** 节点。
+2. 在属性检查器底部点击 **添加组件**。
+3. 搜索并添加 **RuntimeSaveBridge**。只添加一个，不要新建 Save 节点。
+4. 组件应显示一个属性：
+   - **Crops Data**
+5. 从资源管理器把 `assets/data/crops.json` 拖入 **Crops Data**，属性通常显示为 `crops`。
+6. 保留 Player 上原有的 `PlayerController`、`TiledTillingController` 和其他玩法组件，不调整它们的顺序或现有绑定。
+7. 按 `Ctrl+S` 保存 `Main.scene`，等待编译完成。
+
+### C. 浏览器预览回归
+
+1. 清空 Creator Console，启动浏览器预览并点击游戏画面取得键盘焦点。
+2. 回归 WASD、方向键、石墙碰撞、相机地图边界和数字键 `1～8` 快捷栏。
+3. 至少完成一次锄地、播种、浇水、睡觉跨天和成熟作物收获。
+4. 检查耕地、湿土、幼苗/成熟作物、背包数量和黄色/蓝色调试框正常刷新。
+5. 关闭并重新打开预览后，状态仍从初始状态开始是阶段 9B 正常结果；阶段 9C 才会执行真实读写和启动恢复。
+6. 返回 Creator，确认除 TMX 1.10 已知提示外没有新项目错误或重复警告。
+
+### D. 回报模板
+
+```text
+RuntimeSaveState / RuntimeSaveBridge 导入：成功/失败
+两个新 .meta：自动生成/未生成
+Player 添加 RuntimeSaveBridge：成功/失败
+Crops Data：crops/未绑定
+现有玩法回归：正常/异常
+重新预览后状态重置：是（阶段 9B 正常）/异常
+除 TMX 1.10 已知提示外的新错误：无/错误内容
+```
+
+### E. 验收记录（2026-07-16）
+
+- `RuntimeSaveState` 与 `RuntimeSaveBridge` 导入成功；脚本和新建 `save` 文件夹的 `.meta` 均由 Creator 3.8.8 自动生成。
+- Player 已添加且仅添加一个 `RuntimeSaveBridge`，`Crops Data=crops`。
+- `Main.scene` 已由 Creator 保存；编辑器同时按当前视口轻微更新 Camera `Ortho Height`，保留实际保存结果。
+- 现有移动、碰撞、相机、快捷栏、耕种、跨天和收获玩法回归正常。
+- 重新预览后状态重置符合阶段 9B 预期；真实存储读写和启动恢复留到阶段 9C。
+- 除 TMX 1.10 已知提示外没有新错误。
 
 ## 阶段 9A：版本化存档快照与自动存档事务（已完成）
 

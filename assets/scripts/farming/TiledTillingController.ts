@@ -94,6 +94,11 @@ export interface FacingSleepResult extends SleepAtTileResult {
 
 export type TillingActionStatus = TillingUpdateResult['status'] | 'wrong_tool';
 
+export interface FarmingRuntimeState {
+  readonly farmDay: FarmDayState;
+  readonly inventory: InventoryState;
+}
+
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === 'object' && value !== null;
 }
@@ -193,6 +198,43 @@ export class TiledTillingController extends Component {
   /** Exposes validated item definitions to read-only quickbar views. */
   public get itemDefinitions(): ReadonlyArray<ItemDefinition> {
     return this.itemDefinitionsValue ?? [];
+  }
+
+  /** Exposes only the active validated map needed by runtime save validation. */
+  public get currentMapDefinition(): MapDefinition | null {
+    return this.findMapDefinition();
+  }
+
+  /** Captures the farming-owned portion of a runtime save snapshot. */
+  public captureRuntimeState(): FarmingRuntimeState {
+    return {
+      farmDay: this.farmDayState,
+      inventory: this.inventoryValue,
+    };
+  }
+
+  /**
+   * Commits a fully validated restore plan and clears transient input latches.
+   * Returns false without mutation when the save targets another map.
+   */
+  public restoreRuntimeState(state: FarmingRuntimeState): boolean {
+    if (
+      state.farmDay.farm.mapId !== this.mapId ||
+      !Number.isInteger(state.farmDay.currentDay) ||
+      state.farmDay.currentDay <= 0
+    ) {
+      return false;
+    }
+
+    this.currentDayValue = state.farmDay.currentDay;
+    this.session = {
+      farm: state.farmDay.farm,
+      primaryActionHeld: false,
+    };
+    this.inventoryValue = state.inventory;
+    this.quickbarSelectionLatch = RELEASED_QUICKBAR_SELECTION;
+    this.actionStatus = 'idle';
+    return true;
   }
 
   /** Returns the gameplay use of the currently selected quickbar item. */

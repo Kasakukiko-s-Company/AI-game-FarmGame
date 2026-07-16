@@ -385,7 +385,18 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 - 解码结果明确区分 JSON 语法损坏、未来/未知版本和领域数据损坏。损坏存档不能伪装成 `missing`，也不能在未确认时覆盖。
 - 校验使用已解码的 maps/items/crops 配置作为 catalog，检查地图、可耕区、物品堆叠、作物成长和跨字段日期关系；平台存储不拥有这些规则。
 - `SaveGame` 把固定 `autosave` 槽和存储结果映射隐藏在 `writeAutosave`、`readAutosave`、`removeAutosave` 后。测试与真实平台 adapter 穿过相同 `ISaveService` seam。
-- 阶段 9A 只建立纯快照与事务，不直接访问 Cocos 节点。阶段 9B 才把 `TiledTillingController` 和 `PlayerController` 的权威运行时状态导出/恢复，并连接睡觉后的自动保存；真实平台持久化 adapter 留在对应平台阶段。
+- 阶段 9A 只建立纯快照与事务，不直接访问 Cocos 节点。
+
+### Runtime Snapshot and Restore
+
+阶段 9B 把版本化存档接到现有运行时权威状态，但仍不执行平台 I/O：
+
+- `RuntimeSaveState` 是纯 TypeScript deep module。`captureRuntimeSave` 接收一次性的玩家、日期/农田和背包权威状态，复制并验证为独立 `SaveData`；`prepareRuntimeRestore` 完整验证后返回恢复计划，不直接产生 Cocos 副作用。
+- 捕获与恢复共用 `SaveCodec` 和 maps/items/crops catalog，因此运行时不能绕过阶段 9A 的地图、堆叠、作物成长和日期约束。
+- `RuntimeSaveBridge` 是 Cocos adapter，外部 interface 只有 `captureSnapshot()` 与 `restoreSnapshot()`。它协调同一 Player 节点上的 `PlayerController` 与 `TiledTillingController`，自身不拥有第二份游戏状态。
+- 恢复采用“验证后提交”：存档损坏或地图不匹配时不修改任何状态；成功计划先替换日期/农田/背包并清空瞬时输入门闩，再恢复玩家世界坐标与朝向。现有视图通过不可变对象引用变化自然重绘。
+- `RuntimeSaveBridge` 只绑定 `crops.json`；地图和物品定义继续来自现有 `TiledTillingController`，避免重复场景配置。
+- 阶段 9B 不读取或写入存储。阶段 9C 再把 bridge 接到 `ISaveService`，实现启动读取、睡觉成功后的自动保存和失败处理；微信与 Windows/Steam 分别提供持久化 adapter。
 
 ## Event Examples
 

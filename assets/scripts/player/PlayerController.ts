@@ -17,6 +17,11 @@ export interface PlayerColliderBounds {
   readonly halfHeight: number;
 }
 
+export interface PlayerRuntimeState {
+  readonly worldPosition: MovementVector;
+  readonly facing: FacingDirection;
+}
+
 /** Seam implemented by world adapters so movement rules do not depend on Tiled or Cocos physics. */
 export interface IPlayerCollisionService {
   resolveMovement(
@@ -44,6 +49,26 @@ export class PlayerController extends Component {
 
   public get facing(): FacingDirection {
     return this.currentFacing;
+  }
+
+  /** Captures the player-owned portion of a runtime save snapshot. */
+  public captureRuntimeState(): PlayerRuntimeState {
+    const position = this.node.worldPosition;
+    return {
+      worldPosition: { x: position.x, y: position.y },
+      facing: this.currentFacing,
+    };
+  }
+
+  /** Applies a fully validated restore plan while preserving the node Z value. */
+  public restoreRuntimeState(state: PlayerRuntimeState): void {
+    this.currentFacing = state.facing;
+    const position = this.node.worldPosition;
+    this.node.setWorldPosition(
+      state.worldPosition.x,
+      state.worldPosition.y,
+      position.z,
+    );
   }
 
   public setInputService(inputService: IInputService): void {

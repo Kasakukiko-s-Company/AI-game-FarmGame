@@ -16,6 +16,7 @@ const COMPONENT_URLS = [
   new URL('../../assets/scripts/farming/TiledSleepingController.ts', import.meta.url),
   new URL('../../assets/scripts/farming/SleepPointView.ts', import.meta.url),
   new URL('../../assets/scripts/ui/QuickbarView.ts', import.meta.url),
+  new URL('../../assets/scripts/save/RuntimeSaveBridge.ts', import.meta.url),
 ] as const;
 
 test('keeps Creator 3.8.8 requireComponent metadata callable', async () => {

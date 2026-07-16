@@ -572,7 +572,7 @@ references/
 
 ## 阶段 9：存档与读取
 
-状态：`[~]`，阶段 9A“版本化存档快照与自动存档事务”已完成并通过 Creator 人工验收；阶段 9B 尚未开始。
+状态：`[~]`，阶段 9A 已完成并推送 Git 基线；阶段 9B“运行时快照采集与状态恢复”已完成并通过 Creator 人工验收，等待建立 Git 基线。
 
 范围：版本化存档模型、保存触发点、桌面适配器、内存适配器、损坏存档回退、最小迁移策略。
 
@@ -592,6 +592,20 @@ references/
 - 本切片不修改 `Main.scene`，不建立运行时状态导出/恢复，不在睡觉后自动保存，也不添加真实桌面/微信持久化 adapter；这些按阶段 9B～9C 分开完成。
 
 阶段 9A 完成门槛：Creator 自动导入 `SaveCodec.ts` 与 `SaveGame.ts` 并生成唯一 `.meta`；`Main.scene` 无新绑定；现有 PC 玩法回归正常；Console 除 TMX 1.10 已知提示外无新错误。
+
+2026-07-16 阶段 9B 实现记录：
+
+- 新增纯 `RuntimeSaveState` module。`captureRuntimeSave` 把玩家、日期、农田和背包权威状态复制为独立 `SaveData`，并穿过阶段 9A 的同一解码校验；运行时状态不一致时明确返回 `invalid_runtime`。
+- `prepareRuntimeRestore` 在任何 Cocos 状态被修改前完整验证存档、活动地图和跨字段约束，只在成功后返回一个独立的恢复计划；损坏存档与地图不匹配不会部分覆盖当前游戏。
+- `PlayerController` 新增玩家位置/朝向采集与恢复入口；`TiledTillingController` 新增日期/农田/背包采集与恢复入口。农田恢复会清除锄地按住状态、快捷栏选择门闩和旧动作状态，避免读取后自动重复操作。
+- 新增 `RuntimeSaveBridge` Cocos adapter，外部 interface 只有 `captureSnapshot()` 与 `restoreSnapshot()`；它读取现有两个权威状态拥有者，不持有第二份玩家、日期、农田或背包状态。
+- bridge 仅依赖现有 `maps.json`、`items.json` 和新绑定的 `crops.json` 进行验证；不访问 `ISaveService`、`wx`、`localStorage`、Steamworks 或文件系统。真实读写、启动加载和睡觉后自动保存留到阶段 9C。
+- 新增 7 项阶段 9B 定向测试；阶段 9A～9B 存档测试通过 `16/16`，全量测试通过 `126/126`，平台架构护栏通过 `8/8`，Creator 3.8.8 TypeScript 严格检查通过。
+- Creator 3.8.8 已自动生成并导入元数据：`RuntimeSaveState` UUID=`682c910c-af6d-474e-bdca-ebb9c695c48e`、`save` 文件夹 UUID=`d5eb92e7-9341-49e1-9715-c97ee8a28d89`、`RuntimeSaveBridge` UUID=`eba4db28-0c49-44ca-aa77-35a478de672b`；当前 75 个资源 UUID 无重复。
+- `Main.scene` 已在 Player 上保存且仅保存一个 `RuntimeSaveBridge`，`Crops Data=crops`；Creator 同时按当前编辑器视口轻微重写 Camera `Ortho Height`，未手工回退用户保存的场景结果。
+- 2026-07-16 人工验收通过：现有玩法回归正常，重新预览后状态按阶段 9B 预期重置，除 TMX 1.10 已知提示外无新错误。
+
+阶段 9B 完成门槛：Creator 自动导入 `RuntimeSaveState.ts` 与 `RuntimeSaveBridge.ts` 并生成唯一 `.meta`；在 Player 添加一个 `RuntimeSaveBridge`，绑定 `Crops Data=crops`；现有 PC 玩法回归正常；重新预览仍重置属于本阶段预期；Console 除 TMX 1.10 已知提示外无新错误。
 
 ## 阶段 10：微信触控适配
 
