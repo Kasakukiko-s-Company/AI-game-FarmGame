@@ -496,7 +496,7 @@ references/
 
 ## 阶段 8：收获、背包与快捷栏
 
-状态：`[~]`，阶段 8A～8B 已完成；阶段 8B“成熟作物收获与背包容量事务”已通过 Creator 导入和现有玩法回归验收；阶段 8C～8D 尚未开始。
+状态：`[~]`，阶段 8A～8B 已完成并推送基线；阶段 8C“收获输入与真实背包适配”已完成并通过 Creator 场景绑定与浏览器预览验收，等待建立 Git 基线；阶段 8D 尚未开始。
 
 范围：锄头、水壶、种子、收获物；固定容量的简单背包；快捷栏选择；成熟作物收获。
 
@@ -532,6 +532,23 @@ references/
 - `Main.scene` 无新绑定；用户已完成 PC 输入和现有玩法回归，实际收获/背包画面未出现符合阶段边界，除 TMX 1.10 已知提示外无新错误。
 
 阶段 8B 完成门槛：Creator 3.8.8 自动导入 `CropHarvesting.ts` 并生成唯一 `.meta`，`Main.scene` 无新绑定，Console 无新错误，现有 PC 玩法回归正常。
+
+2026-07-16 阶段 8C 实现记录：
+
+- 新增 `decodeItemsData(value)`，在 Cocos `JsonAsset.json` 进入玩法前校验 schema 版本、稳定 ID、物品类型、堆叠上限、非负价格、工具/种子引用字段和 ID 唯一性。
+- 新增纯 `useCropInventoryAction(...)`：同一个 E 语义动作优先处理面前已有作物；成熟时收获、未成熟时返回 `not_mature`，空的已耕地才尝试从真实背包扣除一粒种子并播种。
+- `TiledTillingController` 继续作为唯一运行时状态拥有者，并新增 8 格 `InventoryState`；默认按顺序装入基础锄头、基础水壶和 3 粒雾叶草种子，物品 ID 由 Creator 属性配置并通过 `items.json` 验证。
+- `useFacingCropAction` 在状态拥有者内部同时提交 `FarmState` 与 `InventoryState`，没有暴露任意 setter；背包满、无种子、未成熟或配置无效时不会产生半完成状态。
+- 既有 `TiledPlantingController` 现在是 E 的上下文作物输入 adapter，不再持有临时 `SeedStack`；开发日志输出动作状态、目标格和 8 格背包快照。
+- 物理输入和优先级不变：E 继续映射平台无关的 `secondaryAction`，空格锄地 > E 播种/收获 > F 浇水 > Enter 睡觉；微信触控以后可输出同一语义。
+- 新增 7 项物品解码/真实背包作物事务测试，并更新 3 项 adapter 测试；`test:crop-actions` 已通过 `10/10`，全量测试已通过 `101/101`，Creator 3.8.8 TypeScript 5.8.2 严格检查已通过。
+- Creator 3.8.8 已自动生成并导入两个 `.meta`：`ItemDataDecoder` UUID=`dccbfe75-c36f-4014-8370-a9476eae509a`，`CropInventoryActions` UUID=`341717c6-6191-4380-a7a2-7bc49b51e8d0`；当前 68 个资源 UUID 无重复。
+- Creator 已把 `items.json` 绑定到 Player 现有 `TiledTillingController.Items Data`，并保存 8 格真实背包的默认工具与 3 粒雾叶草种子配置；旧的临时种子属性已从 `TiledPlantingController` 场景数据中移除。
+- 本切片不绘制背包或快捷栏，不接选择槽输入，也不让选中槽决定锄头/水壶行为；这些留到阶段 8D。
+- 2026-07-16 浏览器验收通过：E 播种使种子 `3→2`，三粒耗尽后返回 `no_seed`；未成熟作物返回 `not_mature` 且状态不变，成熟作物返回 `harvested`、从地块消失并向背包加入 `mistleaf=1`。
+- 按住 E 不重复，空格/E/F/Enter 优先级正常；移动、碰撞、相机、跨天、耕种和黄色/蓝色调试框全部回归正常。快捷栏/背包画面尚未出现符合阶段边界；除 TMX 1.10 已知提示外没有新错误。
+
+阶段 8C 完成门槛：Creator 自动导入 `ItemDataDecoder.ts` 与 `CropInventoryActions.ts` 并生成唯一 `.meta`；Player 的 `TiledTillingController.Items Data` 绑定 `items.json`；E 可从真实背包播种并收获成熟作物；现有输入、碰撞、相机、跨天和视觉回归正常，Console 无新项目错误。
 
 ## 阶段 9：存档与读取
 

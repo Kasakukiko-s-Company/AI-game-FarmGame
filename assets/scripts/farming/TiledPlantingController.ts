@@ -6,45 +6,28 @@ import {
   warn,
 } from 'cc';
 import { decodeCropsData } from '../data/CropDataDecoder';
+import type { InventoryState } from '../inventory/InventoryState';
 import { PlayerController } from '../player/PlayerController';
-import type { PlantCropStatus, SeedStack } from './CropPlanting';
+import type { CropInventoryActionStatus } from './CropInventoryActions';
 import { TiledTillingController } from './TiledTillingController';
 
 const { ccclass, property, requireComponent } = _decorator;
 
-/** Connects semantic planting input to configured crops and the shared farm state. */
+/** Connects semantic crop input to planting, harvesting and the shared state. */
 @ccclass('TiledPlantingController')
 @requireComponent(TiledTillingController)
 export class TiledPlantingController extends Component {
   @property({ type: JsonAsset, tooltip: 'Validated assets/data/crops.json configuration.' })
   public cropsData: JsonAsset | null = null;
 
-  @property({ tooltip: 'Temporary seed item used before the inventory stage.' })
-  public seedItemId = 'mistleaf_seed';
-
-  @property({ min: 0, step: 1, tooltip: 'Temporary starting seed quantity.' })
-  public startingSeedQuantity = 3;
-
   private controller: PlayerController | null = null;
   private stateOwner: TiledTillingController | null = null;
-  private seeds: SeedStack = { itemId: 'mistleaf_seed', quantity: 3 };
   private secondaryActionHeld = false;
-  private actionStatus: PlantCropStatus | 'idle' = 'idle';
+  private actionStatus: CropInventoryActionStatus | 'idle' = 'idle';
   private didWarnInvalidSetup = false;
 
-  public get remainingSeedQuantity(): number {
-    return this.seeds.quantity;
-  }
-
-  public get lastActionStatus(): PlantCropStatus | 'idle' {
+  public get lastActionStatus(): CropInventoryActionStatus | 'idle' {
     return this.actionStatus;
-  }
-
-  protected override onLoad(): void {
-    this.seeds = {
-      itemId: this.seedItemId,
-      quantity: this.startingSeedQuantity,
-    };
   }
 
   protected override onEnable(): void {
@@ -74,39 +57,35 @@ export class TiledPlantingController extends Component {
       return;
     }
 
-    this.tryPlantFacingTile();
+    this.tryUseFacingCropAction();
   }
 
-  private tryPlantFacingTile(): void {
+  private tryUseFacingCropAction(): void {
     const cropsFile = decodeCropsData(this.cropsData?.json);
-    if (
-      this.stateOwner === null ||
-      cropsFile === null ||
-      this.seedItemId.trim().length === 0 ||
-      !Number.isInteger(this.seeds.quantity) ||
-      this.seeds.quantity < 0
-    ) {
+    if (this.stateOwner === null || cropsFile === null) {
       this.warnInvalidSetupOnce();
       return;
     }
 
-    const result = this.stateOwner.plantFacingCrop(
-      this.seeds,
-      cropsFile.crops,
-    );
+    const result = this.stateOwner.useFacingCropAction(cropsFile.crops);
     if (result === null) {
       this.warnInvalidSetupOnce();
       return;
     }
 
     this.didWarnInvalidSetup = false;
-    this.seeds = result.seeds;
     this.actionStatus = result.status;
     log(
       `[TiledPlantingController] ${result.status} tile ` +
       `(${result.target?.x ?? '-'}, ${result.target?.y ?? '-'}); ` +
-      `seeds=${result.seeds.quantity}.`,
+      `inventory=${this.describeInventory(result.state.inventory)}.`,
     );
+  }
+
+  private describeInventory(inventory: InventoryState): string {
+    return inventory.slots
+      .map((stack) => stack === null ? '-' : `${stack.itemId}:${stack.quantity}`)
+      .join('|');
   }
 
   private warnInvalidSetupOnce(): void {
@@ -116,7 +95,7 @@ export class TiledPlantingController extends Component {
 
     this.didWarnInvalidSetup = true;
     warn(
-      '[TiledPlantingController] Assign crops.json and configure a valid seed, day and tilling source.',
+      '[TiledPlantingController] Assign crops.json and configure valid map/items state.',
     );
   }
 }

@@ -11,10 +11,18 @@ import {
 } from 'cc';
 import type {
   CropDefinition,
+  ItemDefinition,
   MapDefinition,
   TilePointData,
   TileRectangleData,
 } from '../data/GameDataTypes';
+import { decodeItemsData } from '../data/ItemDataDecoder';
+import {
+  addInventoryItem,
+  createInventory,
+  type InventoryState,
+  type ItemStack,
+} from '../inventory/InventoryState';
 import { PlayerController } from '../player/PlayerController';
 import {
   updateTillingSession,
@@ -42,10 +50,9 @@ import {
   type WorldPoint,
 } from '../world/TileInteraction';
 import {
-  plantCrop,
-  type PlantCropResult,
-  type SeedStack,
-} from './CropPlanting';
+  useCropInventoryAction,
+  type CropInventoryActionResult,
+} from './CropInventoryActions';
 
 const { ccclass, property, requireComponent } = _decorator;
 
@@ -58,7 +65,7 @@ interface TillingSetup {
   readonly grid: TileGridGeometry;
 }
 
-export interface FacingPlantCropResult extends PlantCropResult {
+export interface FacingCropInventoryActionResult extends CropInventoryActionResult {
   readonly target: TileCoordinate | null;
 }
 
@@ -109,6 +116,9 @@ export class TiledTillingController extends Component {
   @property({ type: JsonAsset, tooltip: 'Validated assets/data/maps.json configuration.' })
   public mapsData: JsonAsset | null = null;
 
+  @property({ type: JsonAsset, tooltip: 'Validated assets/data/items.json configuration.' })
+  public itemsData: JsonAsset | null = null;
+
   @property({ tooltip: 'Map definition ID selected from maps.json.' })
   public mapId = 'mvp_farm';
 
@@ -118,6 +128,18 @@ export class TiledTillingController extends Component {
   @property({ min: 1, step: 1, tooltip: 'Initial positive game day owned by this farm state.' })
   public startingDay = 1;
 
+  @property({ tooltip: 'Starting hoe item ID from items.json.' })
+  public startingHoeItemId = 'hoe_basic';
+
+  @property({ tooltip: 'Starting watering can item ID from items.json.' })
+  public startingWateringCanItemId = 'watering_can_basic';
+
+  @property({ tooltip: 'Starting seed item ID used by the contextual crop action.' })
+  public startingSeedItemId = 'mistleaf_seed';
+
+  @property({ min: 0, step: 1, tooltip: 'Starting seed quantity placed in the real inventory.' })
+  public startingSeedQuantity = 3;
+
   private controller: PlayerController | null = null;
   private session: TillingSession = {
     farm: { mapId: 'mvp_farm', tiles: [] },
@@ -125,6 +147,8 @@ export class TiledTillingController extends Component {
   };
   private actionStatus: TillingUpdateResult['status'] = 'idle';
   private currentDayValue = 1;
+  private inventoryValue: InventoryState = createInventory();
+  private itemDefinitionsValue: ReadonlyArray<ItemDefinition> | null = null;
   private didWarnMissingSetup = false;
 
   public get farmState(): FarmState {
@@ -143,6 +167,11 @@ export class TiledTillingController extends Component {
     return this.actionStatus;
   }
 
+  /** Exposes the single authoritative inventory snapshot to read-only views. */
+  public get inventoryState(): InventoryState {
+    return this.inventoryValue;
+  }
+
   /** Exposes the validated visual boundary without leaking the JSON document. */
   public get farmableArea(): TileRectangleData | null {
     return this.findMapDefinition()?.farmableArea ?? null;
@@ -153,28 +182,33 @@ export class TiledTillingController extends Component {
     return this.findMapDefinition()?.sleepTile ?? null;
   }
 
-  /** Applies planting to this component's authoritative FarmState. */
-  public plantFacingCrop(
-    seeds: SeedStack,
+  /** Applies contextual planting or harvesting to the authoritative state. */
+  public useFacingCropAction(
     crops: ReadonlyArray<CropDefinition>,
-  ): FacingPlantCropResult | null {
+  ): FacingCropInventoryActionResult | null {
     const setup = this.getSetup();
-    if (setup === null) {
+    const items = this.itemDefinitionsValue;
+    if (setup === null || items === null) {
       return null;
     }
 
     const target = this.getFacingTarget(setup);
-    const result = plantCrop(
-      this.session.farm,
+    const result = useCropInventoryAction(
+      {
+        farm: this.session.farm,
+        inventory: this.inventoryValue,
+      },
       target,
-      seeds,
+      this.startingSeedItemId,
       this.currentDayValue,
       crops,
+      items,
     );
     this.session = {
       ...this.session,
-      farm: result.farm,
+      farm: result.state.farm,
     };
+    this.inventoryValue = result.state.inventory;
     return { ...result, target };
   }
 
@@ -243,6 +277,7 @@ export class TiledTillingController extends Component {
       farm: { mapId: this.mapId, tiles: [] },
       primaryActionHeld: false,
     };
+    this.initializeInventory();
   }
 
   protected override onEnable(): void {
@@ -345,6 +380,61 @@ export class TiledTillingController extends Component {
         },
       },
     };
+  }
+
+  private initializeInventory(): void {
+    this.inventoryValue = createInventory();
+    this.itemDefinitionsValue = null;
+
+    const itemsFile = decodeItemsData(this.itemsData?.json);
+    const startingSeedQuantity = this.startingSeedQuantity;
+    if (
+      itemsFile === null ||
+      !Number.isInteger(startingSeedQuantity) ||
+      startingSeedQuantity < 0 ||
+      !this.hasStartingItemType(itemsFile.items, this.startingHoeItemId, 'tool') ||
+      !this.hasStartingItemType(
+        itemsFile.items,
+        this.startingWateringCanItemId,
+        'tool',
+      ) ||
+      !this.hasStartingItemType(itemsFile.items, this.startingSeedItemId, 'seed')
+    ) {
+      warn(
+        '[TiledTillingController] Assign valid items.json and starting inventory IDs.',
+      );
+      return;
+    }
+
+    const startingItems: ItemStack[] = [
+      { itemId: this.startingHoeItemId, quantity: 1 },
+      { itemId: this.startingWateringCanItemId, quantity: 1 },
+      ...(startingSeedQuantity === 0
+        ? []
+        : [{ itemId: this.startingSeedItemId, quantity: startingSeedQuantity }]),
+    ];
+    let inventory = this.inventoryValue;
+    for (const stack of startingItems) {
+      const addition = addInventoryItem(inventory, stack, itemsFile.items);
+      if (addition.status !== 'added') {
+        warn(
+          '[TiledTillingController] Starting inventory does not fit or references an invalid item.',
+        );
+        return;
+      }
+      inventory = addition.inventory;
+    }
+
+    this.inventoryValue = inventory;
+    this.itemDefinitionsValue = itemsFile.items;
+  }
+
+  private hasStartingItemType(
+    items: ReadonlyArray<ItemDefinition>,
+    itemId: string,
+    type: ItemDefinition['type'],
+  ): boolean {
+    return items.some((item) => item.id === itemId && item.type === type);
   }
 
   private getFacingTarget(setup: TillingSetup): TileCoordinate | null {

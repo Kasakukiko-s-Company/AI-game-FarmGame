@@ -12,7 +12,83 @@
 
 阶段 8A“固定容量背包与快捷栏纯规则”已完成并推送 Git 基线。
 
-阶段 8B“成熟作物收获与背包容量事务”已完成 Creator 3.8.8 导入和现有玩法回归验收，等待建立 Git 基线。
+阶段 8B“成熟作物收获与背包容量事务”已完成并推送 Git 基线。
+
+阶段 8C“收获输入与真实背包适配”已完成并通过 Creator 场景绑定与浏览器预览验收，等待建立并推送 Git 基线；阶段 8D 尚未开始。
+
+## 阶段 8C：收获输入与真实背包适配（已完成）
+
+本切片让 E 同时承担“作物交互”：面前有成熟作物时收获，面前是空的已耕地时从真实背包扣除种子并播种。8 格背包已经存在于运行时，但阶段 8D 前仍不会显示快捷栏。
+
+### A. 刷新并确认脚本导入
+
+1. 停止浏览器预览，回到 **Cocos Creator 3.8.8**。
+2. 点击资源管理器右上角圆形 **刷新** 按钮，等待脚本编译和资源导入结束。
+3. 展开 `assets → scripts → data`，确认出现 `ItemDataDecoder`。
+4. 展开 `assets → scripts → farming`，确认出现 `CropInventoryActions`。
+5. 两个新文件都是纯 TypeScript 规则，不能添加为节点组件。
+6. 确认两个 `.meta` 均由 Creator 自动生成；不要手写 `.meta`，不要复制其他 UUID。
+7. 查看 Creator 底部 Console，确认没有新的红色脚本错误；TMX 1.10 已知提示可以保留。
+
+### B. 给现有状态拥有者绑定 items.json
+
+1. 在层级管理器展开 `Main → Canvas`，选中现有 **Player** 节点。
+2. 在属性检查器找到现有 **TiledTillingController**，不要添加第二个同名组件。
+3. 将资源管理器中的 `assets/data/items.json` 拖到新增的 **Items Data** 属性；属性框通常显示 `items`。
+4. 确认以下默认值：
+   - **Starting Hoe Item Id**：`hoe_basic`
+   - **Starting Watering Can Item Id**：`watering_can_basic`
+   - **Starting Seed Item Id**：`mistleaf_seed`
+   - **Starting Seed Quantity**：`3`
+5. 找到同一 Player 上现有的 **TiledPlantingController**：它现在应只保留 **Crops Data**，原来的临时 Seed Item/Quantity 属性消失属于正常结果。
+6. 按 `Ctrl+S` 保存 `Main.scene`，等待导入和编译任务结束。
+
+### C. 浏览器预览验收
+
+1. 清空 Creator Console 后启动浏览器预览，并点击游戏画面取得键盘焦点。
+2. 打开浏览器开发者工具 Console；运行时作物/背包日志主要显示在浏览器 Console。
+3. 在可耕药圃空地上依次短按空格和 E：
+   - 空格应完成锄地。
+   - 第一次 E 应记录 `planted`。
+   - 日志的 inventory 应含 `hoe_basic:1|watering_can_basic:1|mistleaf_seed:2`。
+4. 松开 E 后换到另一块已耕空地再次短按，种子应依次降为 1、0；按住 E 不应重复消耗。
+5. 在没有种子的空已耕地按 E，应记录 `no_seed`，土地不出现作物。
+6. 为至少一株作物完成成熟循环：每天 F 浇水后，到室外休息点按 Enter 跨天；雾叶草需要累计 3 个已浇水成长日。
+7. 作物尚未成熟时面对它按 E，应记录 `not_mature`，作物和背包不变。
+8. 作物成熟后面对它短按 E，应记录 `harvested`：
+   - 成熟作物从地块上消失。
+   - 土地仍保持已耕状态。
+   - inventory 日志新增 `mistleaf:1`。
+9. 本阶段没有快捷栏或背包画面属于正常结果；背包满时保留成熟作物已经由自动测试覆盖，不需要在 Creator 中手工填满 8 格。
+10. 回归 WASD、方向键、石墙碰撞、相机和横屏尺寸、F 浇水、Enter 睡觉、跨天成长以及黄色/蓝色调试框。
+11. 可选检查同时输入：空格+E 只锄地；E+F 只执行 E 作物交互；F+Enter 只浇水。
+12. 返回 Creator，确认除 TMX 1.10 已知提示外没有新的项目错误或重复警告。
+
+### D. 回报模板
+
+```text
+ItemDataDecoder / CropInventoryActions 导入：成功/失败
+两个新 .meta：自动生成/未生成
+TiledTillingController Items Data：items
+初始 E 播种日志与种子 3→2：正常/异常
+三粒种子耗尽后：no_seed，背包种子为 0/异常
+未成熟作物 E：not_mature 且状态不变/异常
+成熟作物 E：harvested，作物消失，mistleaf=1/异常
+按住 E 不重复：正常/异常
+空格/E/F/Enter 优先级：正常/异常
+移动、碰撞、相机、跨天、耕种和调试框回归：正常/异常
+快捷栏或背包画面：未出现（阶段 8C 正常）
+除 TMX 1.10 已知提示外的新错误：无/错误内容
+```
+
+### E. 验收记录（2026-07-16）
+
+- `ItemDataDecoder` 与 `CropInventoryActions` 导入成功；两个 `.meta` 均由 Creator 3.8.8 自动生成并导入。
+- Player 现有 `TiledTillingController.Items Data` 已绑定 `items.json`，场景保存了基础锄头、基础水壶与 3 粒雾叶草种子的初始背包配置。
+- 首次 E 播种使种子数量从 3 降为 2；三粒种子耗尽后返回 `no_seed`，背包种子为 0；按住 E 不会重复执行。
+- 未成熟作物 E 返回 `not_mature` 且状态不变；成熟作物 E 返回 `harvested`，作物消失并向背包加入 `mistleaf=1`。
+- 空格/E/F/Enter 优先级正常；移动、碰撞、相机、跨天、耕种和黄色/蓝色调试框回归正常。
+- 快捷栏或背包画面尚未出现符合阶段 8C 边界；除 TMX 1.10 已知提示外没有新错误。
 
 ## 阶段 8B：成熟作物收获与背包容量事务（已完成）
 

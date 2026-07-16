@@ -186,7 +186,7 @@ MVP 不实现耐久、升级、水量或范围强化。
 
 ## Required Validation
 
-当前初始化校验器已覆盖 schema 版本、ID 唯一性、物品/作物/工具交叉引用、正整数成长阶段、地图内坐标、可耕作矩形和默认语言显示键。价格非负、ID 格式、未知字段和完整运行时解码将在数据加载阶段补齐；当前不能把 TypeScript 接口当成不可信 JSON 的运行时验证。
+当前初始化校验器已覆盖 schema 版本、ID 唯一性、物品/作物/工具交叉引用、正整数成长阶段、地图内坐标、可耕作矩形和默认语言显示键。运行时 `decodeItemsData` 与 `decodeCropsData` 还会在对应玩法 adapter 使用前校验不可信 JSON 的结构、价格/计数和重复 ID；工具、地图、本地化与完整 bundle 的运行时解码仍留在后续数据加载阶段，不能把 TypeScript 接口本身当作验证。
 
 - ID 唯一且格式合法。
 - `seedItemId`、`harvestItemId`、`cropId` 引用存在且类型匹配。

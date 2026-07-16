@@ -826,9 +826,17 @@
       "__uuid__": "c7e4eeca-f3a1-4b5f-9d2b-4daa454220ae",
       "__expectedType__": "cc.JsonAsset"
     },
+    "itemsData": {
+      "__uuid__": "0630d67f-e554-4085-b55c-d8eedf7a3334",
+      "__expectedType__": "cc.JsonAsset"
+    },
     "mapId": "mvp_farm",
     "blockingLayerName": "Blocking",
     "startingDay": 1,
+    "startingHoeItemId": "hoe_basic",
+    "startingWateringCanItemId": "watering_can_basic",
+    "startingSeedItemId": "mistleaf_seed",
+    "startingSeedQuantity": 3,
     "_id": "ecA3IJ4i5HhbCofC8HxKfQ"
   },
   {
@@ -845,8 +853,6 @@
       "__uuid__": "2fe894f8-bbad-41a6-98af-8cf1e526f54f",
       "__expectedType__": "cc.JsonAsset"
     },
-    "seedItemId": "mistleaf_seed",
-    "startingSeedQuantity": 3,
     "_id": "08S84vr1JCJaqxVh/InT1Z"
   },
   {

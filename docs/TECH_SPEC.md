@@ -352,6 +352,18 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 - `not_tilled`、`no_crop`、`not_mature`、`inventory_full`、`invalid_crop` 和 `invalid_item` 是可预期玩法拒绝；损坏计数和内容不变量继续抛出 `RangeError`。
 - 本 module 是纯进程内规则，不新增 `IHarvestService` 或 adapter。阶段 8C/8D 才建立运行时背包所有者、输入路由和 HUD。
 
+## Runtime Crop Inventory Adapter Slice
+
+阶段 8C 把播种与收获连接到同一个真实运行时背包，但仍不绘制快捷栏：
+
+- `decodeItemsData(value)` 把 `items.json` 的 `JsonAsset.json` 当作 `unknown`，只接受 schema 1、唯一非空 ID、受支持物品类型、正整数 `maxStack`、非负整数价格，以及工具/种子要求的引用字段。
+- `useCropInventoryAction(state, target, seedItemId, currentDay, crops, items)` 是 E 作物交互的单一纯 interface。面前已有作物时只尝试收获；只有 `harvestCrop` 返回 `no_crop` 才尝试从背包扣种并播种。
+- 播种先用零数量探测验证作物、日期和目标，再原子扣除一粒种子并构造新农田；任何普通拒绝都复用原 `HarvestState`。收获继续复用阶段 8B 的全产量容量检查。
+- `TiledTillingController` 继续独占运行时日期、`FarmState` 和 `InventoryState`。初始 8 格背包依次装入配置的锄头、水壶和 3 粒种子；所有 ID 必须在绑定的 `items.json` 中具有正确类型。
+- `useFacingCropAction` 是唯一 Cocos 命令 seam：它计算 Player 正前方一格，调用纯作物事务，并在同一个 method 内替换 farm 与 inventory，不暴露第二个状态拥有者或通用 setter。
+- 历史命名的 `TiledPlantingController` 现在只负责 E 的按下沿、crops JSON 解码、输入优先级和开发日志；它不再拥有临时 `SeedStack`。E 仍是 `secondaryAction`，所以 PC 与后续微信触控共享相同语义。
+- 本阶段保持空格锄地 > E 播种/收获 > F 浇水 > Enter 睡觉。快捷栏 UI、选槽输入以及由选中物品路由工具动作留到阶段 8D。
+
 ## Event Examples
 
 - `GAME_LOADED`
