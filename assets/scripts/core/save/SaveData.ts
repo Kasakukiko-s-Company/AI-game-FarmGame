@@ -2,7 +2,7 @@ import type { FacingDirection } from '../../player/PlayerMovement';
 
 export type { FacingDirection } from '../../player/PlayerMovement';
 
-export const CURRENT_SAVE_VERSION = 1;
+export const CURRENT_SAVE_VERSION = 1 as const;
 export const MVP_SAVE_SLOT_ID = 'autosave';
 
 export interface Vector2Data {
@@ -12,13 +12,8 @@ export interface Vector2Data {
 
 export interface PlayerSaveData {
   readonly mapId: string;
-  readonly position: Vector2Data;
+  readonly worldPosition: Vector2Data;
   readonly facing: FacingDirection;
-}
-
-export interface ClockSaveData {
-  readonly currentDay: number;
-  readonly timeOfDay: number;
 }
 
 export interface InventorySlotSaveData {
@@ -27,8 +22,7 @@ export interface InventorySlotSaveData {
 }
 
 export interface InventorySaveData {
-  readonly capacity: number;
-  readonly selectedSlot: number;
+  readonly selectedSlotIndex: number;
   readonly slots: ReadonlyArray<InventorySlotSaveData | null>;
 }
 
@@ -43,7 +37,7 @@ export interface CropSaveData {
 export interface FarmTileSaveData {
   readonly x: number;
   readonly y: number;
-  readonly isTilled: boolean;
+  readonly isTilled: true;
   readonly wateredOnDay: number | null;
   readonly crop: CropSaveData | null;
 }
@@ -53,62 +47,15 @@ export interface FarmSaveData {
   readonly tiles: ReadonlyArray<FarmTileSaveData>;
 }
 
-export interface SettingsSaveData {
-  readonly musicVolume: number;
-  readonly soundVolume: number;
-  readonly muted: boolean;
-}
-
+/**
+ * Version-one MVP snapshot. It contains only authoritative state that currently
+ * exists in gameplay; platform storage and future migrations stay outside it.
+ */
 export interface SaveData {
-  readonly saveVersion: number;
+  readonly saveVersion: typeof CURRENT_SAVE_VERSION;
   readonly savedAt: string;
   readonly player: PlayerSaveData;
-  readonly clock: ClockSaveData;
+  readonly currentDay: number;
   readonly inventory: InventorySaveData;
   readonly farm: FarmSaveData;
-  readonly settings: SettingsSaveData;
-}
-
-export interface NewSaveDataOptions {
-  readonly savedAt: string;
-  readonly mapId: string;
-  readonly playerPosition: Vector2Data;
-  readonly inventoryCapacity?: number;
-}
-
-/** Creates domain state only; persistence and current time are injected by callers. */
-export function createNewSaveData(options: NewSaveDataOptions): SaveData {
-  const inventoryCapacity = options.inventoryCapacity ?? 12;
-
-  if (!Number.isInteger(inventoryCapacity) || inventoryCapacity <= 0) {
-    throw new Error('inventoryCapacity must be a positive integer');
-  }
-
-  return {
-    saveVersion: CURRENT_SAVE_VERSION,
-    savedAt: options.savedAt,
-    player: {
-      mapId: options.mapId,
-      position: options.playerPosition,
-      facing: 'down',
-    },
-    clock: {
-      currentDay: 1,
-      timeOfDay: 480,
-    },
-    inventory: {
-      capacity: inventoryCapacity,
-      selectedSlot: 0,
-      slots: Array.from({ length: inventoryCapacity }, () => null),
-    },
-    farm: {
-      mapId: options.mapId,
-      tiles: [],
-    },
-    settings: {
-      musicVolume: 1,
-      soundVolume: 1,
-      muted: false,
-    },
-  };
 }

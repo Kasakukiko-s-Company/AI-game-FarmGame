@@ -376,6 +376,17 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 - `QuickbarView` 是状态拥有者的只读投影。它绘制原创几何占位图标、槽号、数量和选中框，并用 Camera 位置与当前可见尺寸锚定在屏幕底部；它不能修改库存，也不缓存可写物品列表。
 - 快捷栏当前展示全部 8 个库存槽。阶段 9 直接序列化 `selectedSlotIndex`；阶段 10 的微信触控只需提供同一绝对选槽语义与屏幕 UI。
 
+## Versioned Autosave
+
+阶段 9A 在既有 `ISaveService` seam 之上建立共享存档 module：
+
+- `SaveData` 版本 1 只包含当前存在的权威状态：玩家地图/世界坐标/朝向、当前日期、8 格库存与选择、农田和作物。未实现的日内时间或设置不占用版本 1 字段。
+- `SaveCodec` 是 JSON 编解码的单一 interface。`encodeSavePayload` 与 `decodeSavePayload` 共用验证规则，因此应用不能写出一个自身拒绝加载的快照。
+- 解码结果明确区分 JSON 语法损坏、未来/未知版本和领域数据损坏。损坏存档不能伪装成 `missing`，也不能在未确认时覆盖。
+- 校验使用已解码的 maps/items/crops 配置作为 catalog，检查地图、可耕区、物品堆叠、作物成长和跨字段日期关系；平台存储不拥有这些规则。
+- `SaveGame` 把固定 `autosave` 槽和存储结果映射隐藏在 `writeAutosave`、`readAutosave`、`removeAutosave` 后。测试与真实平台 adapter 穿过相同 `ISaveService` seam。
+- 阶段 9A 只建立纯快照与事务，不直接访问 Cocos 节点。阶段 9B 才把 `TiledTillingController` 和 `PlayerController` 的权威运行时状态导出/恢复，并连接睡觉后的自动保存；真实平台持久化 adapter 留在对应平台阶段。
+
 ## Event Examples
 
 - `GAME_LOADED`

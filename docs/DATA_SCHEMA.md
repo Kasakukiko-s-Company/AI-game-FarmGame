@@ -139,24 +139,20 @@ MVP 不实现耐久、升级、水量或范围强化。
 ```json
 {
   "saveVersion": 1,
-  "savedAt": "2026-07-13T12:00:00.000Z",
+  "savedAt": "2026-07-16T08:00:00.000Z",
   "player": {
     "mapId": "mvp_farm",
-    "position": { "x": 0, "y": 0 },
-    "facing": "down"
+    "worldPosition": { "x": 16, "y": -24 },
+    "facing": "left"
   },
-  "clock": {
-    "currentDay": 1,
-    "timeOfDay": 480
-  },
+  "currentDay": 3,
   "inventory": {
-    "capacity": 8,
     "selectedSlotIndex": 0,
     "slots": [
       { "itemId": "hoe_basic", "quantity": 1 },
       { "itemId": "watering_can_basic", "quantity": 1 },
-      { "itemId": "mistleaf_seed", "quantity": 3 },
-      null,
+      { "itemId": "mistleaf_seed", "quantity": 2 },
+      { "itemId": "mistleaf", "quantity": 1 },
       null,
       null,
       null,
@@ -170,26 +166,23 @@ MVP 不实现耐久、升级、水量或范围强化。
         "x": 7,
         "y": 8,
         "isTilled": true,
-        "wateredOnDay": 1,
+        "wateredOnDay": 3,
         "crop": {
           "cropId": "mistleaf",
           "plantedOnDay": 1,
-          "growthProgress": 0,
-          "stageIndex": 0,
-          "lastGrowthDay": 0
+          "growthProgress": 2,
+          "stageIndex": 2,
+          "lastGrowthDay": 2
         }
       }
     ]
-  },
-  "settings": {
-    "musicVolume": 1,
-    "soundVolume": 1,
-    "muted": false
   }
 }
 ```
 
-当前存档类型把 `player.position` 保留为与渲染解耦的二维数值；在阶段 2/4 固定坐标转换规则后，再明确它代表世界坐标还是“瓦片 + 局部偏移”。农田始终保存整数瓦片坐标。MVP 背包固定为 8 格且全部同时构成快捷栏；`selectedSlotIndex` 使用零基索引并必须指向现有槽位。
+版本 1 只保存已经存在的权威玩法状态，不提前加入尚未实现的日内时钟或设置。`player.worldPosition` 是 Cocos 逻辑世界坐标；农田始终保存整数瓦片坐标。MVP 背包固定为 8 格且全部同时构成快捷栏；`selectedSlotIndex` 使用零基索引并必须指向现有槽位。
+
+平台 `ISaveService` 只存储这份 JSON 的不透明字符串。共享 `SaveCodec` 负责版本和领域一致性，平台 adapter 不得解释或修改字段。MVP 固定使用一个名为 `autosave` 的自动存档槽。
 
 ## Required Validation
 
@@ -201,4 +194,7 @@ MVP 不实现耐久、升级、水量或范围强化。
 - 成长阶段非空且每段至少一天。
 - 农田矩形位于地图边界内。
 - 本地化默认语言覆盖所有 MVP 可见键。
-- 存档版本受支持，坐标、背包和作物状态彼此一致。
+- 存档版本受支持，保存时间为标准 UTC ISO 时间，玩家地图与农田地图一致。
+- 背包固定为 8 格；选中槽、物品 ID、正数量和 `maxStack` 必须合法。
+- 已耕地必须位于对应地图可耕区内且坐标不可重复；浇水日期不得晚于当前日期。
+- 作物 ID、种植日、成长进度、视觉阶段和最后结算日必须与 `crops.json` 及当前日期一致。

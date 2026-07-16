@@ -572,11 +572,26 @@ references/
 
 ## 阶段 9：存档与读取
 
-状态：`[ ]`
+状态：`[~]`，阶段 9A“版本化存档快照与自动存档事务”已完成并通过 Creator 人工验收；阶段 9B 尚未开始。
 
 范围：版本化存档模型、保存触发点、桌面适配器、内存适配器、损坏存档回退、最小迁移策略。
 
 完成门槛：保存后退出并重新载入，玩家位置、日期、背包、地块和作物状态一致；失败不会静默覆盖有效存档。
+
+2026-07-16 阶段 9A 实现记录：
+
+- 收紧早期 `SaveData` 脚手架为当前真实 MVP 权威状态：版本与保存时间、玩家地图/世界坐标/朝向、当前日期、8 格背包与选中槽、农田及作物；尚未实现的日内时间和设置不再提前进入版本 1。
+- `SaveCodec` 是版本 1 JSON 的唯一编解码 interface。编码前和读取后使用同一套校验，防止写入一个自己无法恢复的存档。
+- 解码不信任平台字符串：明确区分 `invalid_json`、`unsupported_version` 与 `invalid_data`；普通损坏返回结果，不以异常冒充“没有存档”。
+- 校验覆盖 ISO 保存时间、玩家地图与有限世界坐标、正日期、固定 8 格背包、合法选中槽、物品 ID/堆叠上限、农田地图一致性、可耕区坐标、地块唯一性、浇水日期、作物 ID、成长进度与视觉阶段一致性。
+- `SaveGame` 把单一 `autosave` 槽、JSON 编解码和 `ISaveService` 结果映射隐藏在三个小 interface 后：`writeAutosave`、`readAutosave`、`removeAutosave`。平台 adapter 继续只读写不透明字符串。
+- 使用 `MemorySaveService` 穿过真实 `ISaveService` seam 验证保存、读取、删除、缺失和存储失败；没有在共享 module 中加入 `localStorage`、`wx`、Steamworks 或文件系统依赖。
+- 新增阶段 9A 定向测试 `9/9`；全量测试通过 `119/119`，平台架构护栏通过 `8/8`，Creator 3.8.8 TypeScript 严格检查通过。
+- Creator 3.8.8 已自动生成并导入两个 `.meta`：`SaveCodec` UUID=`c95b5a17-4ec2-4e99-b6e0-4fce6412c65c`，`SaveGame` UUID=`2123c7a4-873d-412c-9f54-bf2abd46d640`；`Main.scene` 无改动。
+- 2026-07-16 人工验收通过：现有玩法回归正常，重新预览后状态按阶段 9A 预期重置，除 TMX 1.10 已知提示外无新错误。
+- 本切片不修改 `Main.scene`，不建立运行时状态导出/恢复，不在睡觉后自动保存，也不添加真实桌面/微信持久化 adapter；这些按阶段 9B～9C 分开完成。
+
+阶段 9A 完成门槛：Creator 自动导入 `SaveCodec.ts` 与 `SaveGame.ts` 并生成唯一 `.meta`；`Main.scene` 无新绑定；现有 PC 玩法回归正常；Console 除 TMX 1.10 已知提示外无新错误。
 
 ## 阶段 10：微信触控适配
 

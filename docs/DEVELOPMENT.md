@@ -130,6 +130,7 @@ $process.ExitCode
 - 阶段 8A 的固定容量库存规则基线提交 `1e2ae9f` 已推送到 `origin/main`。
 - 阶段 8B 的成熟作物收获事务基线提交 `73b2f18` 已推送到 `origin/main`。
 - 阶段 8C 的真实背包播种/收获适配基线提交 `0ee5d39` 已推送到 `origin/main`。
-- 阶段 8D 的快捷栏显示、数字键选槽和选中物品驱动操作已完成；Creator 已自动导入脚本、生成元数据并保存 `QuickbarView` 场景绑定，数字选槽、物品门控、数量同步、收获、相机尺寸及现有玩法回归均通过浏览器验收，110 项全量测试通过。空间清理后命令行类型复查仅受缺失的 Creator 生成 `temp/declarations` 阻塞。
+- 阶段 8D 的快捷栏显示、数字键选槽和选中物品驱动操作基线提交 `07261f8` 已推送到 `origin/main`；Creator 声明缓存恢复后严格类型检查通过。
+- 阶段 9A 的版本化 `SaveData`、严格 `SaveCodec` 和单槽 `SaveGame` 事务已完成；9 项定向测试、119 项全量测试、平台架构护栏和 Creator 3.8.8 严格类型检查通过。Creator 已自动生成两个新 `.meta`，`Main.scene` 无改动，现有玩法和 Console 人工回归通过。
 
 不要提交 AppSecret、登录凭据、二维码、`.env`、构建缓存或来源不明素材。
