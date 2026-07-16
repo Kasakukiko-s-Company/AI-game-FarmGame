@@ -21,6 +21,12 @@ test('sleep adapter consumes semantic input through the authoritative day-state 
   assert.match(sleepingSource, /snapshot\.sleepAction/);
   assert.match(sleepingSource, /\.sleepFacingTile\(/);
   assert.match(sleepingSource, /this\.node\.setWorldPosition\(/);
+  assert.match(sleepingSource, /public\s+subscribeSleepCompleted\(/);
+  assert.match(
+    sleepingSource,
+    /this\.node\.setWorldPosition\([\s\S]*?this\.notifySleepCompleted\(/,
+    'Autosave listeners must run only after the spawn teleport is committed.',
+  );
   assert.doesNotMatch(
     sleepingSource,
     /private\s+(?:readonly\s+)?(?:farm|dayState)\s*:/,

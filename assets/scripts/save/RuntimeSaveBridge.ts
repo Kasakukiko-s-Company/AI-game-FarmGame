@@ -10,6 +10,7 @@ import {
   type CaptureRuntimeSaveResult,
   type PrepareRuntimeRestoreResult,
 } from '../core/save/RuntimeSaveState';
+import type { SaveValidationCatalog } from '../core/save/SaveCodec';
 import type { SaveData } from '../core/save/SaveData';
 import { decodeCropsData } from '../data/CropDataDecoder';
 import type {
@@ -52,6 +53,22 @@ export class RuntimeSaveBridge extends Component {
   public cropsData: JsonAsset | null = null;
 
   private didWarnMissingSetup = false;
+
+  /** Exposes the same validated catalog used by capture and restore. */
+  public getSaveValidationCatalog(): SaveValidationCatalog | null {
+    const setup = this.getSetup();
+    if (setup === null) {
+      this.warnMissingSetupOnce();
+      return null;
+    }
+
+    this.didWarnMissingSetup = false;
+    return {
+      maps: [setup.map],
+      items: setup.stateOwner.itemDefinitions,
+      crops: setup.crops,
+    };
+  }
 
   /** Captures all current authoritative state as one validated save snapshot. */
   public captureSnapshot(savedAt = new Date()): CaptureSnapshotResult {

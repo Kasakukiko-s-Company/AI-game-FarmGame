@@ -572,7 +572,7 @@ references/
 
 ## 阶段 9：存档与读取
 
-状态：`[~]`，阶段 9A 已完成并推送 Git 基线；阶段 9B“运行时快照采集与状态恢复”已完成并通过 Creator 人工验收，等待建立 Git 基线。
+状态：`[x]`，阶段 9A、9B 已完成并推送 Git 基线；阶段 9C“本地持久化、启动读取与睡觉后自动保存”代码、Creator 场景绑定和浏览器 round-trip 人工验收均已完成，等待建立 Git 基线。
 
 范围：版本化存档模型、保存触发点、桌面适配器、内存适配器、损坏存档回退、最小迁移策略。
 
@@ -606,6 +606,24 @@ references/
 - 2026-07-16 人工验收通过：现有玩法回归正常，重新预览后状态按阶段 9B 预期重置，除 TMX 1.10 已知提示外无新错误。
 
 阶段 9B 完成门槛：Creator 自动导入 `RuntimeSaveState.ts` 与 `RuntimeSaveBridge.ts` 并生成唯一 `.meta`；在 Player 添加一个 `RuntimeSaveBridge`，绑定 `Crops Data=crops`；现有 PC 玩法回归正常；重新预览仍重置属于本阶段预期；Console 除 TMX 1.10 已知提示外无新错误。
+
+2026-07-16 阶段 9C 实现记录：
+
+- 新增 `LocalKeyValueSaveService`，把现有 `ISaveService` 适配到注入的 key-value 存储，并用稳定 namespace 隔离 `autosave` 键；空字符串仍是有效载荷，读/写/删除异常都返回明确失败。
+- 新增 `CocosLocalSaveService` 平台 factory，只在 `platform` 边界调用 `sys.localStorage`；共享玩法和存档 module 不直接访问 `window`、浏览器 `localStorage`、`wx`、Steamworks 或 Node 文件系统。
+- 新增纯 `AutosaveSession` deep module，统一执行启动读取、版本/内容校验、运行时恢复和串行写入。只有“没有存档”或完整恢复成功后才允许写入；损坏存档、未知版本、存储失败和恢复失败会阻止本会话写入，避免静默覆盖。
+- `RuntimeSaveBridge` 新增只读验证 catalog seam，继续复用现有地图、物品与作物配置，不把游戏数据校验下放给平台存储。
+- `TiledSleepingController` 新增成功睡觉订阅 seam，通知发生在跨天结算与出生点传送之后；失败睡觉、按住 Enter 或普通工具动作不会触发保存。
+- 新增 `LocalAutosaveController` Cocos composition component：`start` 时读取一个本地 autosave，成功后订阅睡觉完成事件；每次成功睡觉后采集最终权威状态并写入。普通移动、锄地、播种、浇水和收获不会即时写入。
+- 平台架构扫描已扩展到 `assets/scripts/save`，继续禁止共享存档/场景装配代码直接依赖 vendor 全局或文件系统。
+- 新增 9 项阶段 9C 定向测试；阶段 9A～9C 存档测试通过 `25/25`，全量测试通过 `135/135`，平台测试通过 `11/11`，Creator 3.8.8 TypeScript 严格检查通过。
+- Creator 3.8.8 已自动生成并导入三个 `.meta`：`AutosaveSession` UUID=`e1112183-a947-4938-a1ac-8fe51277dbfd`、`CocosLocalSaveService` UUID=`ded8c7fd-4cd2-4539-897c-fccc51d549ce`、`LocalAutosaveController` UUID=`182732a9-9f8f-4a88-b554-cb25ea21329a`；当前 78 个资源 UUID 无重复。
+- `Main.scene/Canvas/Player` 已保存且只保存一个启用的 `LocalAutosaveController`，`Storage Namespace=farm-game`；场景其余差异是新增组件导致的序列化引用编号顺延。
+- 2026-07-16 浏览器人工验收通过：首次启动记录 `startup new_game`，成功睡觉进入第 2 天后记录 `autosaved day 2`，重新预览记录 `startup loaded`。
+- 读取后日期、玩家位置/朝向、农田、作物、湿土、背包数量和选中槽均与保存时一致；现有玩法回归正常，除 TMX 1.10 已知提示外没有新错误。
+- 浏览器预览完成了一个完整保存/读取闭环；微信小游戏与 Windows 原生环境的稳定存储和生命周期仍分别留到阶段 10～12 验证。
+
+阶段 9C 完成门槛：Creator 自动导入三个新脚本并生成唯一 `.meta`；Player 添加且只添加一个 `LocalAutosaveController`，保持 `Storage Namespace=farm-game`；首次启动记录 `new_game`，成功睡觉后记录 `autosaved`，重新预览记录 `loaded`；日期、玩家保存点位置/朝向、背包、选中槽、农田和作物一致；损坏或读取失败不覆盖原存档；现有玩法回归正常，Console 无新项目错误。
 
 ## 阶段 10：微信触控适配
 

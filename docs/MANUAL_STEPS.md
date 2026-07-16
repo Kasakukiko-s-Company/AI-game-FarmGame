@@ -20,7 +20,122 @@
 
 阶段 9A“版本化存档快照与自动存档事务”已完成并推送 Git 基线。
 
-阶段 9B“运行时快照采集与状态恢复”已完成并通过 Creator 人工验收，等待建立 Git 基线。
+阶段 9B“运行时快照采集与状态恢复”已完成并推送 Git 基线。
+
+阶段 9C“本地持久化、启动读取与睡觉后自动保存”已完成并通过 Creator 与浏览器 round-trip 人工验收。
+
+## 阶段 9C：本地持久化、启动读取与睡觉后自动保存（已完成）
+
+本切片使用 Cocos 的跨平台本地存储入口保存一个 `autosave` 槽。启动预览时先读取并恢复；只有成功睡觉、跨天结算并传送到出生点之后才自动保存。普通移动、锄地、播种、浇水或收获不会立即写入。
+
+### A. 刷新并确认脚本导入
+
+1. 停止当前浏览器预览，回到 **Cocos Creator 3.8.8**。
+2. 点击资源管理器右上角圆形 **刷新**，等待脚本编译和资源导入完成。
+3. 展开 `assets → scripts → core → save`，确认出现 **AutosaveSession**。
+4. 展开 `assets → scripts → platform`，确认出现 **CocosLocalSaveService**。
+5. 展开 `assets → scripts → save`，确认出现 **LocalAutosaveController**。
+6. 确认 Creator 为三个新脚本自动生成 `.meta`；不要手写、复制或修改 UUID。
+7. 查看 Creator Console：除 TMX 1.10 已知提示外，不应出现新的红色脚本错误。
+
+其中 `AutosaveSession` 和 `CocosLocalSaveService` 不是场景组件；只把 `LocalAutosaveController` 添加到 Player。
+
+### B. 给 Player 添加本地自动存档组件
+
+1. 在层级管理器展开 `Main → Canvas`，选中现有 **Player**。
+2. 先确认 Player 已有且只有一个：
+   - `RuntimeSaveBridge`，并且 `Crops Data=crops`
+   - `TiledSleepingController`，并且 `Crops Data=crops`
+3. 在属性检查器底部点击 **添加组件**。
+4. 搜索并添加 **LocalAutosaveController**。只添加一个，不要新建 Save 节点。
+5. 新组件应显示：
+   - **Storage Namespace**：保持默认 `farm-game`
+6. `RuntimeSaveBridge` 如果已存在，不要再次添加；该组件是自动存档的运行时快照来源。
+7. 按 `Ctrl+S` 保存 `Main.scene`，等待编译完成。
+
+### C. 首次启动、睡觉保存与重新加载
+
+1. 清空 Creator Console，启动浏览器预览并点击游戏画面取得键盘焦点。
+2. 打开浏览器开发者工具 Console。首次使用且没有旧存档时应出现：
+
+   ```text
+   [LocalAutosaveController] startup new_game.
+   ```
+
+3. 建立一组容易识别的状态：
+   - 用数字键选择正确工具；
+   - 至少耕一格地；
+   - 至少播种一株作物；
+   - 可再浇水或收获，使背包数量与初始状态不同。
+4. 走到睡觉点，正确面对睡觉点并短按 Enter。确认：
+   - 日期从第 1 天进入第 2 天；
+   - Player 传送回出生点；
+   - 浏览器 Console 出现类似：
+
+   ```text
+   [LocalAutosaveController] autosaved day 2 after sleep from day 1.
+   ```
+
+5. 保存发生在传送之后，因此本次存档中的玩家位置应是出生点。睡觉后如果继续移动但没有再次睡觉，这段移动不会进入存档。
+6. 停止并重新打开浏览器预览。不要清除浏览器站点数据，也不要手工删除存档键。
+7. 浏览器 Console 应出现：
+
+   ```text
+   [LocalAutosaveController] startup loaded.
+   ```
+
+8. 验证恢复结果：
+   - 当前日期仍是第 2 天，不回到第 1 天；
+   - Player 位于上次保存时的出生点，朝向保持；
+   - 已耕地、湿土日期状态、作物成长状态保持；
+   - 背包物品数量、收获物和当前选中快捷栏槽保持；
+   - 快捷栏、耕地和作物视图在加载后自动刷新。
+9. 再走回睡觉点完成一次睡觉，确认日期进入第 3 天并出现新的 `autosaved day 3` 日志；再重新预览一次，确认第 3 天也能恢复。
+10. 回归移动、碰撞、相机边界、数字键选槽、空格/E/F/Enter 优先级和黄色/蓝色调试框。
+11. 返回 Creator，确认除 TMX 1.10 已知提示外没有新项目错误或持续重复警告。
+
+浏览器预览使用的本地存储按页面来源隔离。如果 Creator 预览端口发生变化，新端口会表现得像“没有旧存档”；这不等同于存档解码失败。阶段 10 和阶段 12 会分别在微信小游戏与 Windows 构建中验证各自的稳定持久化环境。
+
+### D. 故障保护说明
+
+- 损坏 JSON、未知存档版本、读取失败或运行时恢复失败都不会被当成“没有存档”。
+- 上述失败会在浏览器 Console 显示 `startup invalid_save`、`storage_failed` 或 `restore_failed`，并阻止本次会话继续自动写入，避免静默覆盖原存档。
+- 如果出现这些状态，先复制完整日志交给 Codex，不要清除站点数据，不要重复睡觉测试。
+- Creator 自身 Console 不一定转发浏览器运行时的普通 `log`；自动存档日志应以浏览器开发者工具 Console 为准。
+
+### E. 回报模板
+
+```text
+AutosaveSession / CocosLocalSaveService / LocalAutosaveController 导入：成功/失败
+三个新 .meta：自动生成/未生成
+Player 添加 LocalAutosaveController：成功/失败
+Storage Namespace：farm-game/其他
+首次启动日志：startup new_game/其他
+睡觉后日志：autosaved day 2/未出现/其他
+重新预览日志：startup loaded/其他
+日期恢复：正常/异常
+玩家位置与朝向恢复：正常/异常
+农田、作物与湿土恢复：正常/异常
+背包数量与选中槽恢复：正常/异常
+第二次睡觉与再次读取：正常/异常
+现有玩法回归：正常/异常
+除 TMX 1.10 已知提示外的新错误：无/完整错误内容
+```
+
+### F. 验收记录（2026-07-16）
+
+- `AutosaveSession`、`CocosLocalSaveService` 与 `LocalAutosaveController` 导入成功，三个 `.meta` 均由 Creator 3.8.8 自动生成。
+- 三个新资源 UUID 分别为：
+  - `AutosaveSession`：`e1112183-a947-4938-a1ac-8fe51277dbfd`
+  - `CocosLocalSaveService`：`ded8c7fd-4cd2-4539-897c-fccc51d549ce`
+  - `LocalAutosaveController`：`182732a9-9f8f-4a88-b554-cb25ea21329a`
+- 当前 78 个资源 UUID 无重复。
+- `Main.scene/Canvas/Player` 已由 Creator 保存且只绑定一个 `LocalAutosaveController`，组件启用，`Storage Namespace=farm-game`。
+- 首次启动浏览器预览记录 `startup new_game`；成功睡觉后记录 `autosaved day 2`；重新预览记录 `startup loaded`。
+- 日期、玩家位置与朝向、农田、作物、湿土、背包数量和选中快捷栏槽均成功恢复。
+- 现有移动、碰撞、相机、耕种、跨天、收获、快捷栏和调试框回归正常。
+- 除 TMX 1.10 已知提示外没有新项目错误。
+- 本轮没有单独记录第二次睡觉进入第 3 天的重复 round-trip；首个完整保存与读取闭环已满足阶段 9C 完成门槛，重复循环继续由自动化串行写入测试与后续平台构建回归覆盖。
 
 ## 阶段 9B：运行时快照采集与状态恢复（已完成）
 

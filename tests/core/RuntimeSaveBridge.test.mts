@@ -14,6 +14,14 @@ const FARMING_URL = new URL(
   '../../assets/scripts/farming/TiledTillingController.ts',
   import.meta.url,
 );
+const AUTOSAVE_CONTROLLER_URL = new URL(
+  '../../assets/scripts/save/LocalAutosaveController.ts',
+  import.meta.url,
+);
+const COCOS_SAVE_SERVICE_URL = new URL(
+  '../../assets/scripts/platform/CocosLocalSaveService.ts',
+  import.meta.url,
+);
 
 test('runtime bridge coordinates existing state owners through one small interface', async () => {
   const [bridge, player, farming] = await Promise.all([
@@ -24,6 +32,7 @@ test('runtime bridge coordinates existing state owners through one small interfa
 
   assert.match(bridge, /public\s+captureSnapshot\(/);
   assert.match(bridge, /public\s+restoreSnapshot\(/);
+  assert.match(bridge, /public\s+getSaveValidationCatalog\(/);
   assert.match(bridge, /captureRuntimeSave\(/);
   assert.match(bridge, /prepareRuntimeRestore\(/);
   assert.match(bridge, /setup\.player\.captureRuntimeState\(\)/);
@@ -40,6 +49,25 @@ test('runtime bridge coordinates existing state owners through one small interfa
   assert.match(player, /public\s+restoreRuntimeState\(/);
   assert.match(farming, /public\s+captureRuntimeState\(/);
   assert.match(farming, /public\s+restoreRuntimeState\(/);
+});
+
+test('local autosave composition loads on startup and saves from the sleep seam', async () => {
+  const [controller, adapter] = await Promise.all([
+    readFile(AUTOSAVE_CONTROLLER_URL, 'utf8'),
+    readFile(COCOS_SAVE_SERVICE_URL, 'utf8'),
+  ]);
+
+  assert.match(controller, /@requireComponent\(RuntimeSaveBridge\)/);
+  assert.match(controller, /this\.session\.load\(\)/);
+  assert.match(controller, /\.subscribeSleepCompleted\(/);
+  assert.match(controller, /session\.save\(new Date\(\)\)/);
+  assert.match(
+    controller,
+    /result\.status !== 'loaded' && result\.status !== 'new_game'/,
+  );
+  assert.doesNotMatch(controller, /\b(?:wx|window|localStorage|SteamAPI_)\b/);
+  assert.match(adapter, /sys\.localStorage/);
+  assert.doesNotMatch(adapter, /\b(?:wx|window|SteamAPI_)\b/);
 });
 
 test('runtime restore clears transient farming input latches', async () => {

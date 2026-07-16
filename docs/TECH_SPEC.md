@@ -398,6 +398,18 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 - `RuntimeSaveBridge` 只绑定 `crops.json`；地图和物品定义继续来自现有 `TiledTillingController`，避免重复场景配置。
 - 阶段 9B 不读取或写入存储。阶段 9C 再把 bridge 接到 `ISaveService`，实现启动读取、睡觉成功后的自动保存和失败处理；微信与 Windows/Steam 分别提供持久化 adapter。
 
+### Local Persistence and Autosave Lifecycle
+
+阶段 9C 把运行时快照连接到真实本地持久化，同时保持游戏规则与平台 API 分离：
+
+- `LocalKeyValueSaveService` 是纯 `ISaveService` adapter，只把不透明字符串映射到带 namespace 的 key-value 存储。异常被转成显式 `failed` 结果，不让配额、权限或存储错误冒充“没有存档”。
+- `createCocosLocalSaveService` 是 Cocos 平台边界，使用 `sys.localStorage` 提供当前编辑器预览及后续 Cocos 发行目标可用的持久化入口。共享 `core`、`farming`、`inventory`、`player`、`save` 和 `world` module 不直接访问浏览器、微信或 Steam 全局。
+- `AutosaveSession` 是应用级 deep module，统一拥有固定槽位读取、JSON 校验、运行时恢复和串行写入。只有 `missing` 或完整恢复成功后才能写入；损坏存档、未知版本、存储失败或恢复失败会锁住写入，防止静默覆盖。
+- `RuntimeSaveBridge.getSaveValidationCatalog()` 复用快照捕获/恢复所用的同一份 maps/items/crops catalog；本地存储 adapter 不解析或理解游戏数据。
+- `TiledSleepingController.subscribeSleepCompleted()` 只在日结算成功且 Player 已传送到出生点后发出完成通知。`LocalAutosaveController` 订阅该 seam，启动时执行一次加载，并在每次成功睡觉后采集最终状态写入。
+- 自动保存触发点当前只有成功睡觉。睡觉后尚未再次睡觉的移动、工具操作或背包变化不会被保存，这是 MVP 的明确事务边界，不是假定的即时存档。
+- 浏览器预览的存储受页面来源和端口隔离。阶段 10 必须在微信小游戏环境验证 Cocos 存储实现与前后台生命周期；阶段 12 必须为 Windows/Steam 明确选择稳定本地文件或原生 adapter，并继续通过 `ISaveService` 注入。
+
 ## Event Examples
 
 - `GAME_LOADED`

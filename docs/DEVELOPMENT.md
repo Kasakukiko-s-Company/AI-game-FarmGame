@@ -24,7 +24,7 @@ MVP 期间不要让 Dashboard 升级或迁移 Creator 版本。当前没有微�
 项目不额外安装 TypeScript，直接使用锁定编辑器自带的 5.8.2：
 
 ```powershell
-node 'C:\ProgramData\cocos\editors\Creator\3.8.8\resources\app.asar.unpacked\node_modules\typescript\lib\tsc.js' -p tsconfig.json --noEmit
+node 'D:\lzq\cocos\editors\Creator\3.8.8\resources\app.asar.unpacked\node_modules\typescript\lib\tsc.js' -p tsconfig.json --noEmit
 ```
 
 `tsconfig.json` 继承编辑器在 `temp/tsconfig.cocos.json` 生成的引擎配置，所以必须至少成功打开并导入一次项目后再运行。`skipLibCheck` 用于忽略 Cocos 自带声明文件的内部兼容诊断，不会关闭项目 TypeScript 文件的严格检查。
@@ -59,6 +59,12 @@ npm.cmd run test:player
 
 ```powershell
 npm.cmd run test:platform
+```
+
+只运行阶段 9 存档、启动读取和本地存储测试：
+
+```powershell
+npm.cmd run test:save
 ```
 
 只运行 world 网格碰撞与 Tiled 地图结构测试：
@@ -134,5 +140,8 @@ $process.ExitCode
 - 阶段 9A 的版本化 `SaveData`、严格 `SaveCodec` 和单槽 `SaveGame` 事务已完成；9 项定向测试、119 项全量测试、平台架构护栏和 Creator 3.8.8 严格类型检查通过。Creator 已自动生成两个新 `.meta`，`Main.scene` 无改动，现有玩法和 Console 人工回归通过。
 - 阶段 9A 基线提交 `7a6b5c1` 已推送到 `origin/main`。
 - 阶段 9B 的纯运行时快照/恢复计划、Player/Farming 权威状态入口和 `RuntimeSaveBridge` 已完成；16 项阶段 9A～9B 存档测试、126 项全量测试、8 项平台架构护栏与 Creator 3.8.8 严格类型检查通过。Creator 已生成三个唯一元数据记录，Player 已保存一个 `RuntimeSaveBridge` 且 `Crops Data=crops`，现有玩法和 Console 人工回归通过。
+- 阶段 9B 基线提交 `cb974aa` 已推送到 `origin/main`。
+- 阶段 9C 已实现 Cocos 本地存储 adapter、启动加载、损坏存档写保护、串行自动保存和睡觉完成通知；25 项存档定向测试、135 项全量测试、11 项平台测试与 Creator 3.8.8 严格类型检查通过。
+- Creator 已为三个新脚本生成唯一 `.meta`；Player 已保存且只保存一个 `LocalAutosaveController`，`Storage Namespace=farm-game`。浏览器已实际验证 `new_game → 睡觉 autosaved day 2 → 重新预览 loaded`，日期、玩家、农田、作物、湿土、背包和选中槽均恢复，现有玩法与 Console 回归正常。
 
 不要提交 AppSecret、登录凭据、二维码、`.env`、构建缓存或来源不明素材。

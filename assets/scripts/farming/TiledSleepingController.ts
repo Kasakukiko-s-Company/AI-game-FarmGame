@@ -12,6 +12,13 @@ import { TiledTillingController } from './TiledTillingController';
 
 const { ccclass, property, requireComponent } = _decorator;
 
+export interface SleepCompletedEvent {
+  readonly previousDay: number;
+  readonly currentDay: number;
+}
+
+export type SleepCompletedListener = (event: SleepCompletedEvent) => void;
+
 /** Connects semantic sleep confirmation to one authoritative day transition. */
 @ccclass('TiledSleepingController')
 @requireComponent(TiledTillingController)
@@ -24,9 +31,18 @@ export class TiledSleepingController extends Component {
   private sleepActionHeld = false;
   private actionStatus: SleepAtTileStatus | 'idle' = 'idle';
   private didWarnInvalidSetup = false;
+  private readonly sleepCompletedListeners = new Set<SleepCompletedListener>();
 
   public get lastActionStatus(): SleepAtTileStatus | 'idle' {
     return this.actionStatus;
+  }
+
+  /** Subscribes to a completed day transition after spawn teleport is applied. */
+  public subscribeSleepCompleted(listener: SleepCompletedListener): () => void {
+    this.sleepCompletedListeners.add(listener);
+    return () => {
+      this.sleepCompletedListeners.delete(listener);
+    };
   }
 
   protected override onEnable(): void {
@@ -91,6 +107,10 @@ export class TiledSleepingController extends Component {
         `${result.state.currentDay}; target=(${result.target?.x ?? '-'}, ` +
         `${result.target?.y ?? '-'}).`,
       );
+      this.notifySleepCompleted({
+        previousDay,
+        currentDay: result.state.currentDay,
+      });
       return;
     }
 
@@ -99,6 +119,17 @@ export class TiledSleepingController extends Component {
       `(${result.target?.x ?? '-'}, ${result.target?.y ?? '-'}); ` +
       `day=${result.state.currentDay}.`,
     );
+  }
+
+  private notifySleepCompleted(event: SleepCompletedEvent): void {
+    for (const listener of this.sleepCompletedListeners) {
+      try {
+        listener(event);
+      } catch (error: unknown) {
+        const detail = error instanceof Error ? error.message : String(error);
+        warn(`[TiledSleepingController] sleep listener failed: ${detail}`);
+      }
+    }
   }
 
   private warnInvalidSetupOnce(): void {

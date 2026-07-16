@@ -81,6 +81,98 @@ export class MemorySaveService implements ISaveService {
   }
 }
 
+/**
+ * Minimal key-value surface implemented by Cocos local storage and by tests.
+ * The platform adapter owns namespacing so game code only sees save slot IDs.
+ */
+export interface LocalKeyValueStorage {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
+}
+
+/** Persistent opaque save adapter over a platform-provided key-value store. */
+export class LocalKeyValueSaveService implements ISaveService {
+  private readonly storage: LocalKeyValueStorage;
+  private readonly namespace: string;
+
+  public constructor(
+    storage: LocalKeyValueStorage,
+    namespace = 'farm-game',
+  ) {
+    this.storage = storage;
+    this.namespace = namespace;
+  }
+
+  public async read(slotId: string): Promise<SaveReadResult> {
+    const key = this.createKey(slotId);
+    if (key === null) {
+      return { status: 'failed', message: 'save slot ID must not be empty' };
+    }
+
+    try {
+      const payload = this.storage.getItem(key);
+      return payload === null
+        ? { status: 'missing' }
+        : { status: 'found', payload };
+    } catch (error: unknown) {
+      return {
+        status: 'failed',
+        message: this.describeStorageError('read', error),
+      };
+    }
+  }
+
+  public async write(slotId: string, payload: string): Promise<SaveWriteResult> {
+    const key = this.createKey(slotId);
+    if (key === null) {
+      return { status: 'failed', message: 'save slot ID must not be empty' };
+    }
+
+    try {
+      this.storage.setItem(key, payload);
+      return { status: 'written' };
+    } catch (error: unknown) {
+      return {
+        status: 'failed',
+        message: this.describeStorageError('write', error),
+      };
+    }
+  }
+
+  public async remove(slotId: string): Promise<SaveWriteResult> {
+    const key = this.createKey(slotId);
+    if (key === null) {
+      return { status: 'failed', message: 'save slot ID must not be empty' };
+    }
+
+    try {
+      this.storage.removeItem(key);
+      return { status: 'written' };
+    } catch (error: unknown) {
+      return {
+        status: 'failed',
+        message: this.describeStorageError('remove', error),
+      };
+    }
+  }
+
+  private createKey(slotId: string): string | null {
+    const normalizedSlotId = slotId.trim();
+    if (normalizedSlotId.length === 0) {
+      return null;
+    }
+
+    const normalizedNamespace = this.namespace.trim() || 'farm-game';
+    return `${normalizedNamespace}:${normalizedSlotId}`;
+  }
+
+  private describeStorageError(operation: string, error: unknown): string {
+    const detail = error instanceof Error ? error.message : String(error);
+    return `local save ${operation} failed: ${detail}`;
+  }
+}
+
 /** Neutral input keeps bootstrap code independent from unfinished controls. */
 export class NeutralInputService implements IInputService {
   public getSnapshot(): InputSnapshot {

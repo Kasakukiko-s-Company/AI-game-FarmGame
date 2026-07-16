@@ -25,6 +25,7 @@ const SHARED_SCRIPT_DIRECTORIES = [
   'farming',
   'inventory',
   'player',
+  'save',
   'ui',
   'world',
 ] as const;
