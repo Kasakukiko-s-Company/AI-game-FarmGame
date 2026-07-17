@@ -132,12 +132,19 @@
 
 ### AVP-FX-005 第一处异常最小状态
 
-状态：`[ ]`，必须先由阶段 10D 锁定异常节拍和目标画面。
+状态：`[~]`，阶段 10D 已锁定“界碑回折”节拍、同机位日常/异常构图和语义资源 ID；尚未在独立资源任务中创作或导入成品。
 
-- 与白天日常状态复用同一套基础地图、玩家、小屋、树和作物资源。
-- 首批只允许使用全局冷暗覆盖、雾/粒子、一个关键轮廓或边界替换、有限 UI 扰动和声音草案。
+- 与白天日常状态复用同一套 `boundary_pass` 基础地图、道路、植被、玩家和机位，不复制整套地表。
+- 日常构图：道路引向北侧亮部，旧界碑位于右上三分线，褪色路标布系在界碑上，山口看似可通行。
+- 异常构图：玩家越过界碑后，同一界碑轮廓再次出现在前方；山口距离被薄雾压平，路标布在安全返回后出现在 `boundary_clue`。
+- 必需表现 ID：`prop.boundary.waystone.normal`、`prop.boundary.waystone.fold_echo`、`prop.boundary.trail_ribbon.tied`、`prop.boundary.trail_ribbon.returned`、`overlay.boundary.fold_cold`、`fx.boundary.inward_mist`。
+- `wechat-low` 只使用半透明色层、界碑受控复用和最多 24 个屏幕内雾实例；粒子全部关闭时改用 2～3 层静态/帧动画雾带。
+- `pc-high` 可增加一个共享的轻量 `fx.boundary.distance_flatten`，但它必须可以完全关闭，且不能改变触发、碰撞、坐标或存档。
+- 音频语义 ID：`amb.boundary.day`、`amb.boundary.fold_void`、`sfx.boundary.fold_step`、`sfx.boundary.ribbon_drop`；缺失音频时通过环境声淡出、旁白与画面完成表达。
+- UI 使用非阻塞里程碑和可选线索提示，不伪装系统错误、不使用不可逆确认样式。
 - 不复制整套地表，不制作屠村、神石愿望、战争残响真身或愿境揭露素材。
-- `wechat-low` 关闭粒子或 Shader 后，仍通过色调、轮廓、声音和对白表达异常。
+- `wechat-low` 关闭粒子、Shader、镜头移动或音频后，仍通过界碑位置变化、玩家回位、轮廓、字幕和对白表达异常。
+- 正式视觉与音频必须拆成两个独立资源任务，任务标题和交付要求见 `docs/FIRST_BARRIER_ANOMALY.md`。
 
 ## 验证场景要求
 

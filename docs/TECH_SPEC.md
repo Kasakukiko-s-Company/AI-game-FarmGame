@@ -169,6 +169,14 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 
 阶段 11 只实现通用的三地图灰盒装载与入口契约，不把正式地图美术、异常音画表现或 NPC 内容硬编码进场景切换器。
 
+阶段 10D 进一步锁定第一处异常的技术边界：
+
+- `anomaly.first_barrier_fold` 只有在 `boundary_probe` 内、面向概念出口并提交一次语义 `interact` 时启动；地图加载、日期、好感和 NPC 对话不是触发器。
+- 叙事状态只保存 `world.boundaryRouteAvailable`、`mystery.firstBarrierObserved`、`mystery.boundaryRibbonInspected` 与 `demo.milestoneReached` 等稳定事实；`armed/presenting`、摄像机、覆盖层、粒子和音频进度不保存。
+- 异常演出、晏巡对白、旧界碑/路标布表现和音频通过稳定配置 ID 组合；事件控制器不读取资源路径，也不要求场景切换器理解剧情。
+- 持久状态在玩家安全落到 `boundary_return` 后提交；资源缺失、中断或画质降级必须清理输入与表现状态，不能让角色留在无效坐标或永久锁住控制。
+- `mystery.firstBarrierObserved` 不是进入主动调查期或最终真相期的充分条件。完整契约见 `docs/FIRST_BARRIER_ANOMALY.md`。
+
 ## Tile Interaction Slice
 
 阶段 4A 固定平台无关的坐标与面向规则：

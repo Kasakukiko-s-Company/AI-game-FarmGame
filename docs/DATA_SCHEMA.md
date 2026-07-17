@@ -164,6 +164,48 @@ MVP 不实现耐久、升级、水量或范围强化。
 
 示例只表达稳定 ID、初始灰盒预算和单向入口；实现时必须同时配置反向入口、锚点唯一性与目标存在校验。地图最终尺寸可在阶段 11 按 4 格倍数微调。碰撞、可耕区、入口和锚点优先来自明确对象层或独立配置，不能在多个组件中重复维护坐标。
 
+## 计划中的第一处异常配置与叙事状态
+
+阶段 10D 已锁定 `boundary_pass` 的第一处异常，但当前尚未创建运行时 JSON、解码器或通用事件系统。阶段 15 实现时应使用稳定语义配置连接地图锚点、叙事状态与表现配置，不把世界坐标、Cocos UUID、文件路径或音频路径写进剧情状态机。
+
+建议的最小配置形状：
+
+```json
+{
+  "schemaVersion": 1,
+  "anomalies": [
+    {
+      "id": "anomaly.first_barrier_fold",
+      "mapId": "boundary_pass",
+      "triggerZoneId": "boundary_probe",
+      "requiredFacing": "up",
+      "actionId": "interact",
+      "conditionId": "world.boundaryRouteAvailable",
+      "observedFlagId": "mystery.firstBarrierObserved",
+      "presentationId": "presentation.boundary.first_fold",
+      "returnAnchorId": "boundary_return",
+      "clueId": "clue.boundary.returned_ribbon",
+      "clueAnchorId": "boundary_clue"
+    }
+  ]
+}
+```
+
+该配置只描述稳定引用和触发契约。完整节拍、晏巡对白、旧界碑/路标布状态、画质回退和中断恢复见 `docs/FIRST_BARRIER_ANOMALY.md`。
+
+阶段 14～15 冻结叙事 schema 时，SaveData v2 至少需要能区分以下稳定事实：
+
+```text
+world.boundaryRouteAvailable
+mystery.firstBarrierObserved
+mystery.boundaryRibbonInspected
+demo.milestoneReached
+```
+
+`armed`、`presenting`、当前雾层进度、摄像机偏移、音频淡化和 NPC 演出控制权都是瞬态表现状态，不得保存。若事件在提交前中断，可以从上次稳定存档重新触发；若 `mystery.firstBarrierObserved=true`，读档不得重播完整首次演出，并应在位置无效时回退 `boundary_return`。
+
+`mystery.firstBarrierObserved` 只表示玩家见过第一处异常，不等于已经进入主动调查期，更不能自动设置最终真相期。后续调查必须使用新的显式事件和玩家选择。
+
 ## `localization.json`
 
 ```json
@@ -471,7 +513,7 @@ export interface RelationshipState {
 - SaveData v2 必须把 `player.mapId` 限制为地图目录中的稳定 ID，并增加明确的叙事/目标状态；旧 `mvp_farm` 存档迁移到 `home_interior` 的 `home_bed`，不能按原世界坐标投射到新地图。
 - 阶段 10E 先确认三档存档、调查前恢复点、Demo 结束方式、`daysPerYear`、`openingDayOfYear`，以及日内时段/天气是否属于权威状态。角色年龄依赖的世界历法不能继续留作纯表现选项。
 - 阶段 12B 建立 SaveData v2 迁移框架、档位元数据、最近档位、损坏档隔离与旧 `autosave` 导入，并为阶段 10C 已确认的 `PlayerIdentityProfile` 与 `RelationshipState` 提供明确版本槽位；权威累计游戏日必须能确定性还原当前年份、年内日和角色年龄。
-- 阶段 13 实现并迁移 15 份关系记录、多个 `dating`、唯一 `spouseCharacterId`、告白/求婚事务与动态年龄查询；阶段 14 的跨天结算负责生日/成年事件，当前目标与叙事状态分别在阶段 14～15 的 schema 确认后进入版本化存档，不得预填无语义的通用字典。
+- 阶段 13 实现并迁移 15 份关系记录、多个 `dating`、唯一 `spouseCharacterId`、告白/求婚事务与动态年龄查询；阶段 14 的跨天结算负责生日/成年事件，当前目标与叙事状态分别在阶段 14～15 的 schema 确认后进入版本化存档。阶段 10D 已提供第一处异常的四个稳定状态语义，但仍不得预填无语义的通用字典或保存演出瞬态。
 - 每次迁移必须从真实旧版本样例开始测试；读取失败不得覆盖原档，单个损坏档不得阻塞其他档位。
 - 三个普通档位不能代替未来的“调查前恢复点”。如果阶段 10E 把恢复点列为 Demo 必须项，它必须是同档位内受保护、不会被普通自动保存覆盖的独立快照。
 
@@ -498,6 +540,8 @@ export interface RelationshipState {
 - 非旁白对白的 `speakerId` 存在；`portrait.characterId` 通常与说话者一致；`textKey` 在默认语言中存在。
 - 每名使用立绘的角色都有可解析的默认状态；目录中的 `assetId` 能映射到已导入资源；`direction` 仅为 `left` 或 `right`。
 - 对白引用的精确状态不存在时给出包含对白行 ID 的诊断，并按固定规则回退；禁止通过正文猜测表情。
+- 第一处异常配置引用存在的地图、触发区、返回锚点、线索锚点、条件、表现与对白 ID；只有面向出口的单次语义交互能启动，进入地图或日期变化不会启动。
+- `mystery.firstBarrierObserved` 与 `mystery.boundaryRibbonInspected` 可以独立表示“见过但未检查”和“稍后检查”；演出瞬态、粒子、摄像机和音频进度不进入存档。
 - 存档版本受支持，保存时间为标准 UTC ISO 时间，玩家地图与农田地图一致。
 - 背包固定为 8 格；选中槽、物品 ID、正数量和 `maxStack` 必须合法。
 - 已耕地必须位于对应地图可耕区内且坐标不可重复；浇水日期不得晚于当前日期。
