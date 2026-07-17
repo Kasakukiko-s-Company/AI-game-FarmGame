@@ -1,26 +1,26 @@
-# FarmGame
+# 《雾乡如昨》 / FarmGame
 
-一个面向微信小游戏和 Steam Windows 的原创 2D 像素风农场生活模拟游戏项目。
+一个面向微信小游戏和 Steam Windows 的原创 2D 像素风农场生活模拟与可选悬疑探索游戏项目。
 
-阶段 0、工具安装验收、阶段 1“工程初始化”、阶段 2“角色移动原型”、阶段 3A～3C、阶段 4A～4D、阶段 5A～5C“耕地”、阶段 6A～6C“播种与作物视觉”以及阶段 7A～7C“浇水、睡觉与跨天”均已完成。
+技术 MVP 的移动、地图碰撞、相机、耕地、播种、浇水、跨天成长、收获、背包、快捷栏和本地自动存档均已完成。当前产品里程碑是一个不限定固定时长、可公开试玩的原创游戏 Demo。
 
 ## 目标
 
-先完成一条很小但完整的游戏闭环：
+已经完成的技术闭环：
 
 > 移动 → 锄地 → 播种 → 浇水 → 睡觉 → 成长 → 收获 → 保存 → 退出 → 重新加载
 
-闭环通过 PC、微信开发者工具和至少一台真机验证后，才讨论 NPC、商店、任务等扩展内容。
+当前在该闭环上加入第一章日常、代表性的村民关系、正式美术与 UI，以及第一处结界异常。Demo 只让玩家意识到故乡边界不正常，不揭露屠村、三个愿望或愿境真相。详细范围见[游戏 Demo 范围](docs/DEMO_SCOPE.md)，完整剧透设定见[叙事设定基线](docs/NARRATIVE_BIBLE.md)。
 
 ## 技术方向
 
-- Cocos Creator 3.8.8（3.8 LTS，MVP 期间不升级）
+- Cocos Creator 3.8.8（3.8 LTS，Demo 期间不升级）
 - TypeScript
 - Tiled 1.12.2 / TMX 地图
 - JSON 数据配置
 - Git
 
-已确认的产品基线：横屏、640×360 逻辑设计分辨率、32×32 像素瓦片、东方幻想药圃主题、一个自动存档槽。MVP 不加入货币、出售和可进入房屋。
+已确认的产品基线：正式名称《雾乡如昨》，横屏、640×360 逻辑设计分辨率、32×32 像素瓦片，表层是东方幻想农场生活，隐藏真相线具有悬疑微恐气质。Demo 至少包含主角住宅室内、故乡日常主区域和结界边界区域三张可独立加载的地图。正式美术采用“原创 HD 像素增强版”：首版 96×96 场景角色、高清像素地图、轻量光照、粒子氛围和少量共享 Shader；对话使用精美 2D 静态立绘差分，并由对白 JSON 显式指定表情与姿势，不从文字自动猜测情绪。技术 MVP 当前仍是一个自动存档槽；Demo 的三档存档与调查前恢复点为待实现方案。
 
 不得手写猜测性的 Cocos 场景、`.meta`、项目设置或组件绑定文件；这些文件由锁定版本的 Cocos Creator 创建。本轮产生的 `.meta` 和 `settings` 均来自实际的 3.8.8 编辑器导入。
 
@@ -32,10 +32,10 @@
 | Node.js | 已安装 | `v24.11.0` |
 | npm | 已安装 | `11.6.1` |
 | Cocos Dashboard | 已安装并验签 | `2.2.1`，`D:\lzq\cocos\CocosDashboard\CocosDashboard.exe` |
-| Cocos Creator | 已安装并验签 | `3.8.8`，`C:\ProgramData\cocos\editors\Creator\3.8.8\CocosCreator.exe` |
+| Cocos Creator | 已安装并验签 | `3.8.8`，`D:\lzq\cocos\editors\Creator\3.8.8\CocosCreator.exe` |
 | 微信开发者工具 | 已安装并验签 | 稳定版 `2.01.2510290`，`D:\lzq\微信小程序开发工具\微信web开发者工具\微信开发者工具.exe` |
 | Tiled | 已安装并验签 | `1.12.2`，`D:\lzq\Tiled\tiled.exe` |
-| Git 仓库 | 已初始化 | `main` 分支；`origin` 为 `git@github.com:Kasakukiko-s-Company/AI-game-FarmGame.git`；阶段 7B 基线 `1bac309` 已推送 |
+| Git 仓库 | 已初始化 | `main` 分支；`origin` 为 `git@github.com:Kasakukiko-s-Company/AI-game-FarmGame.git`；阶段 9C 基线 `4e6c175` 已推送 |
 
 四个 GUI 工具的可执行文件均存在且 Authenticode 签名有效。用户报告安装和首次启动没有错误或警告。
 
@@ -66,17 +66,27 @@
 - 阶段 7A 已通过：`FarmDayState` 统一日期与农田状态，`waterTile` 处理首次/重复/非法浇水，`advanceFarmDay` 以配置驱动单日成长、未浇水停长、成熟封顶与未知作物全量拒绝。Creator 元数据、无场景改动结论和现有玩法浏览器回归均已验收；当前不含浇水按键、湿土视觉或睡觉交互。
 - 阶段 7B 已通过：F 键输出平台无关的 `wateringAction`，`TiledWateringController` 通过唯一状态拥有者浇灌角色面前的已耕地，`TilledSoilView` 只把当天浇过的格子显示为原创冷调深棕湿土。Creator 元数据、Player 绑定、首次/重复/非法浇水、按住去重、锄地/播种优先级及现有玩法回归均已验收；尚未接入睡觉或日期推进。
 - 阶段 7C 已通过：Enter 输出平台无关的 `sleepAction`；面对 `maps.json` 睡觉点时只结算一天，成功后传送到出生点，湿土和作物视图从同一权威状态自动刷新。原创休息点视图、Creator 元数据、场景绑定、76 项全量测试和浏览器预览均已验收；错误位置、按住、出生点重复 Enter 都不会连续跳日。
+- 阶段 7D 已建立微信/Windows 运行环境与发行渠道的接口、目标映射和架构护栏；真实发行 composition 尚未接管 Creator 场景，留在 Demo 应用外壳与平台交付阶段完成。
+- 阶段 8A～8D 已完成固定容量背包、成熟作物收获事务、真实物品 JSON 适配、8 格快捷栏、槽位选择和选中物品驱动操作。
+- 阶段 9A～9C 已完成版本 1 存档、严格编解码、运行时快照/恢复以及浏览器本地自动存档；当前仍是一个固定 `autosave` 槽，只在成功睡觉后保存。
 
 ## 文档索引
 
 - [开发规范](AGENTS.md)
+- [领域词汇表](CONTEXT.md)
 - [执行计划](PLANS.md)
 - [游戏设计](docs/GAME_DESIGN.md)
 - [MVP 范围与验收](docs/MVP.md)
+- [游戏 Demo 范围](docs/DEMO_SCOPE.md)
+- [叙事设定基线（内部剧透）](docs/NARRATIVE_BIBLE.md)
 - [技术规格](docs/TECH_SPEC.md)
 - [数据结构](docs/DATA_SCHEMA.md)
 - [平台要求](docs/PLATFORM.md)
 - [美术规范](docs/ART_GUIDE.md)
+- [正式美术基线](docs/ART_BIBLE.md)
+- [美术资源需求清单](docs/ART_ASSET_LIST.md)
+- [UI 规格](docs/UI_SPEC.md)
+- [对话与立绘规格](docs/DIALOGUE_SPEC.md)
 - [素材来源记录](docs/ASSET_SOURCES.md)
 - [知识产权与素材来源](docs/LEGAL_AND_IP.md)
 - [编辑器手动步骤](docs/MANUAL_STEPS.md)
@@ -85,6 +95,6 @@
 
 ## 当前阶段边界
 
-阶段 7C 已完成并通过人工验收，当前等待用户明确决定是否建立阶段 7C Git 基线。不自行进入阶段 8，也不加入完整背包、NPC、商店、任务和完整 UI。
+阶段 9C 已完成并推送 Git 基线。当前正在完成 Demo 产品/叙事定义与首个视觉验证包规格；后续只按 `docs/DEMO_SCOPE.md` 和 `docs/ART_ASSET_LIST.md` 锁定的小阶段推进，不因完整游戏愿景自动进入完整恋爱、矿洞、战斗、商店经济、大规模 NPC 或批量美术生产。
 
 当前没有微信小游戏 AppID，这不阻塞编辑器原型、PC 预览和核心玩法开发；进入微信小游戏构建验收前必须申请。安装仍应保留且只从各工具官方网站更新，MVP 期间不得升级 Cocos Creator。

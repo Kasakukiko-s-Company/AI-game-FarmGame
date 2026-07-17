@@ -4,7 +4,7 @@
 
 ## Engine
 
-- Cocos Creator 3.8.8（3.8 LTS），MVP 期间锁定该版本。
+- Cocos Creator 3.8.8（3.8 LTS），Demo 期间锁定该版本。
 - 2D 项目，TypeScript 脚本。
 - Tiled 1.12.2 输出 TMX 地图；只使用经 Cocos 3.8.8 冒烟测试通过的基础 TMX 功能。
 - JSON 内容配置。
@@ -64,11 +64,13 @@ windows-native  + steam
 
 - `PlatformContracts.ts` 定义五个接口和统一结果类型。
 - `PlatformAdapters.ts` 只提供初始化期可验证的 Desktop/WeChat 身份、安全区注入、内存存档、中性输入和空音频/分析实现。
-- `PlatformComposition.ts` 是发行目标的唯一 composition root；它把 `steam-windows` 映射为 `windows-native + steam`，把 `wechat-minigame` 映射为 `wechat-minigame + wechat`。
+- `PlatformComposition.ts` 是发行目标计划使用的唯一 composition root；它把 `steam-windows` 映射为 `windows-native + steam`，把 `wechat-minigame` 映射为 `wechat-minigame + wechat`。
 - composition root 强制调用者提供 `ISaveService` 与 `IInputService`，不允许发行包静默使用 `MemorySaveService`；音频和分析可在 MVP 使用空 adapter。
 - `ISaveService` 只读写不透明字符串，不理解 `SaveData`，因此平台存储不会拥有农场规则。
 - 微信适配器当前不直接访问 `wx`；真实生命周期、触控和持久化只在对应玩法阶段接入。
-- Steamworks 原生调用不得进入共享 TypeScript；阶段 12 通过 Windows 原生/JSB adapter 接入。Steam 专属能力按成就、身份等独立 capability seam 扩展，不把 `IPlatformService` 变成浅层大接口。
+- Steamworks 原生调用不得进入共享 TypeScript；Windows 原生运行时装配在阶段 19 接入，Steamworks/JSB 能力在阶段 20 接入。Steam 专属能力按成就、身份等独立 capability seam 扩展，不把 `IPlatformService` 变成浅层大接口。
+
+当前事实：阶段 7D 已建立接口、目标映射和架构护栏，但 `composePlatformServices` 尚未成为 Creator 场景的真实启动入口。`LocalAutosaveController` 仍直接创建 Cocos 本地存储 adapter。阶段 12A 必须增加运行时 bootstrap；阶段 17/19 再分别提供微信与 Windows 的真实 adapter，届时才可称发行 composition 已接管运行时。
 
 这个接口边界同时服务两个实际目标平台，因此保留；没有为尚不存在的子系统继续拆分空接口。
 
@@ -84,9 +86,15 @@ windows-native  + steam
   - `clock`
   - `inventory`
   - `farm`
+  - `npcs`
+  - `relationships`
+  - `objectives`
+  - `narrative`
   - `settings`
 
 场景节点只保存渲染缓存和组件引用。改变状态必须通过明确命令，例如 `TillTile`、`PlantCrop`、`WaterTile`、`EndDay`、`HarvestCrop`。
+
+当前技术 MVP 尚未拥有上述完整 `GameState`；`TiledTillingController` 临时集中持有日期、农田、背包、快捷栏动作、睡眠和部分恢复入口。阶段 12A 在不改变玩法行为的前提下提取运行时会话/命令协调器，后续 NPC、关系、目标和叙事状态不得继续堆入该历史命名组件。
 
 ## Player Movement Slice
 
@@ -109,7 +117,7 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 
 ## Save Design
 
-存档至少包含：
+完整 Demo 的目标存档类别包括：
 
 - `saveVersion`
 - `savedAt`
@@ -122,13 +130,19 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 - `farmTiles`
 - `cropStates`
 - `settings`
+- `npcStates`
+- `relationships`
+- `objectives`
+- `narrativeFlags`
+
+当前版本 1 实际只包含玩家、日期、背包、农田和作物。`timeOfDay`、`settings`、NPC、关系、目标和叙事字段是 Demo 规划项，不得误记为已实现；字段与迁移顺序在阶段 10E、12B、13～15 逐步冻结。
 
 规则：
 
 - 使用稳定 ID 和纯 JSON 数据，不保存 Cocos 对象引用。
 - 写入采用临时数据校验后替换，避免半写入覆盖有效档。
 - 读取先解析、校验版本，再迁移或拒绝。
-- MVP 只需要一个槽位和最小迁移入口，不建立复杂迁移框架。
+- 技术 MVP 只需要一个槽位和最小迁移入口；Demo 的多档位、旧单槽导入和后续 NPC/叙事扩展需要明确版本迁移，但不建立无法测试的通用迁移框架。
 
 ## Coordinate System
 
@@ -374,7 +388,7 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 - 空格只在选中配置的锄头时耕地；F 只在选中配置的水壶时浇水；E 只在空已耕地且选中种子时播种。错误选择是普通玩法拒绝，返回 `wrong_tool`/`wrong_item` 且不修改状态。
 - 收获保持上下文优先：E 面对已有作物时先尝试收获或报告未成熟，不要求手持种子。因此选中收获物、工具或空槽时仍可收取成熟作物。
 - `QuickbarView` 是状态拥有者的只读投影。它绘制原创几何占位图标、槽号、数量和选中框，并用 Camera 位置与当前可见尺寸锚定在屏幕底部；它不能修改库存，也不缓存可写物品列表。
-- 快捷栏当前展示全部 8 个库存槽。阶段 9 直接序列化 `selectedSlotIndex`；阶段 10 的微信触控只需提供同一绝对选槽语义与屏幕 UI。
+- 快捷栏当前展示全部 8 个库存槽。阶段 9 直接序列化 `selectedSlotIndex`；阶段 12C 的触控布局原型与阶段 17 的正式微信触控继续提供同一绝对选槽语义，不伪造键盘事件。
 
 ## Versioned Autosave
 
@@ -408,7 +422,7 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 - `RuntimeSaveBridge.getSaveValidationCatalog()` 复用快照捕获/恢复所用的同一份 maps/items/crops catalog；本地存储 adapter 不解析或理解游戏数据。
 - `TiledSleepingController.subscribeSleepCompleted()` 只在日结算成功且 Player 已传送到出生点后发出完成通知。`LocalAutosaveController` 订阅该 seam，启动时执行一次加载，并在每次成功睡觉后采集最终状态写入。
 - 自动保存触发点当前只有成功睡觉。睡觉后尚未再次睡觉的移动、工具操作或背包变化不会被保存，这是 MVP 的明确事务边界，不是假定的即时存档。
-- 浏览器预览的存储受页面来源和端口隔离。阶段 10 必须在微信小游戏环境验证 Cocos 存储实现与前后台生命周期；阶段 12 必须为 Windows/Steam 明确选择稳定本地文件或原生 adapter，并继续通过 `ISaveService` 注入。
+- 浏览器预览的存储受页面来源和端口隔离。阶段 17～18 必须在微信小游戏环境验证存储实现、前后台生命周期与真机行为；阶段 19 必须为 Windows 明确选择稳定本地文件或原生 adapter；阶段 20 再评估 Steam Auto-Cloud。所有实现继续通过 `ISaveService` 注入。
 
 ## Event Examples
 

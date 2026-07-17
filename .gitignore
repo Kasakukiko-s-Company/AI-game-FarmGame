@@ -36,3 +36,14 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
+#//////////////////////////
+# Local AI/editor integration
+#//////////////////////////
+# These files were generated as empty/default local configs during indexing.
+# Remove these ignores only when the repository intentionally adopts a shared
+# configuration with documented commands and maintainers.
+/.claude/
+/.cursor/
+/.mcp.json
+/opencode.jsonc

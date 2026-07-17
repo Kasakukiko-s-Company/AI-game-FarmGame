@@ -60,6 +60,18 @@ Cocos 3.8 文档说明微信小游戏环境不是标准浏览器，资源包、�
 
 参考：<https://docs.cocos.com/creator/3.8/manual/en/editor/publish/publish-native-index.html>
 
+## Visual Quality Profiles
+
+正式美术使用同一套纯 2D 玩法、稳定资源 ID 和表现接口，不按发行平台分叉核心逻辑：
+
+- 微信小游戏默认使用 `wechat-low`：限制屏幕内粒子和局部柔光数量，关闭草木共享 Shader、高成本后处理、实时阴影、景深和体积雾。
+- Steam/Windows 默认使用 `pc-high`：可以提高轻量粒子、柔光 Sprite 和共享简单 Shader 的预算，但第一版仍不启用高成本 Bloom、景深、体积雾或多个实时灯光。
+- 用户设置可以覆盖默认档位；昼夜覆盖、假阴影、灯光 Sprite、天气/环境粒子、草木动态、水面和异常效果都必须能单独关闭。
+- 画质只影响表现预算。关闭雨粒子不会改变天气，关闭夜间色层不会改变时间，关闭异常 Shader 不会改变剧情状态。
+- 第一版两个目标共用 96×96 角色和 32×32 Tile；未来 PC 高分辨率替换通过稳定 ID 的资源映射完成，不修改玩法代码或存档。
+
+详细开关、初始预算和视觉规则见 `docs/ART_BIBLE.md`。这些档位目前是设计方案，尚未实现运行时设置组件，也没有经过微信真机性能验证。
+
 ## Interfaces
 
 ```text
@@ -70,8 +82,7 @@ IPlatformService
   - subscribeLifecycle(listener)
 
 IInputService
-  - getMoveVector()
-  - consumeAction(action)
+  - getSnapshot()
 
 ISaveService
   - read(slot)
@@ -87,7 +98,7 @@ IAnalyticsService
   - track(eventName, properties)
 ```
 
-这是职责草案，不是现在就要创建的最终签名。接口返回值必须能表达失败，异步能力不能伪装成同步。
+以上是当前职责摘要，精确签名以 `assets/scripts/platform/PlatformContracts.ts` 为准。当前 `InputSnapshot` 已覆盖移动、工具、快捷栏和暂停；阶段 12A 再加入确认、取消、对白推进与选项导航等 UI 语义，并通过输入上下文抑制世界动作。接口返回值必须能表达失败，异步能力不能伪装成同步。
 
 ## Dependency Rule
 
@@ -126,7 +137,8 @@ composePlatformServices(target, adapters)
 - `saves` 与 `input` 是必需 adapter；缺失时不得启动发行 composition。
 - `audio` 与 `analytics` 在 MVP 可使用显式空 adapter。
 - Steam 成就、覆盖层、身份或云接口只有在出现真实调用方和至少两个 adapter 后才建立独立 capability seam，不扩张 `IPlatformService`。
-- 当前场景里的 `KeyboardInputBridge` 仍是开发/PC 输入 adapter；阶段 10 的触控 UI 将写入同一语义输入 interface。
+- 当前 `PlatformComposition` 只完成接口与架构护栏；Creator 场景仍由 `KeyboardInputBridge` 和本地自动存档组件直接装配，没有真实调用 `composePlatformServices`。阶段 12A 必须增加运行时 bootstrap，阶段 17 和阶段 19 分别接入微信与 Windows 发行 adapter。
+- 当前场景里的 `KeyboardInputBridge` 仍是开发/PC 输入 adapter；阶段 12C 先做触控安全区与布局原型，阶段 17 的正式触控 UI 写入同一语义输入 interface。
 
 ## Input Strategy
 
@@ -135,8 +147,12 @@ composePlatformServices(target, adapters)
 - `move: Vec2Like`
 - `primaryAction`
 - `secondaryAction`
+- `wateringAction`
+- `sleepAction`
+- `quickbarSlotIndex`
 - `selectPrevious` / `selectNext`
 - `pause`
+- 阶段 12A 计划加入 `confirm`、`cancel`、`dialogueAdvance` 与选项导航，并由 `gameplay`/`dialogue`/`menu`/`modal` 输入上下文决定哪些动作可见。
 
 游戏逻辑不知道输入来自键盘、虚拟摇杆还是触控按钮。
 
