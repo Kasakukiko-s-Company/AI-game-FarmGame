@@ -110,7 +110,59 @@ MVP 不实现耐久、升级、水量或范围强化。
 }
 ```
 
-`tileSizePixels: 32` 已确认为地图基准；示例中的出生点、睡觉点和耕作区坐标仍需在地图阶段确定。碰撞和可耕作区可以从 TMX 对象层导入，避免重复维护。
+上述 schema 1 和 `mvp_farm` 是技术 MVP 历史事实。`tileSizePixels: 32` 继续作为地图基准，但 `mvp_farm` 不得直接改名冒充正式 Demo 地图。
+
+阶段 10B 已锁定计划中的 schema 2 地图身份和连接语义：
+
+```json
+{
+  "schemaVersion": 2,
+  "maps": [
+    {
+      "id": "home_interior",
+      "displayNameKey": "map.home_interior.name",
+      "widthTiles": 20,
+      "heightTiles": 12,
+      "tileSizePixels": 32,
+      "safeAnchorId": "home_bed"
+    },
+    {
+      "id": "hometown_main",
+      "displayNameKey": "map.hometown_main.name",
+      "widthTiles": 64,
+      "heightTiles": 48,
+      "tileSizePixels": 32,
+      "safeAnchorId": "main_safe_spawn"
+    },
+    {
+      "id": "boundary_pass",
+      "displayNameKey": "map.boundary_pass.name",
+      "widthTiles": 40,
+      "heightTiles": 24,
+      "tileSizePixels": 32,
+      "safeAnchorId": "boundary_entry"
+    }
+  ],
+  "portals": [
+    {
+      "id": "home_to_main",
+      "fromMapId": "home_interior",
+      "toMapId": "hometown_main",
+      "targetAnchorId": "main_home_door",
+      "conditionId": "opening.elderConversationCompleted"
+    },
+    {
+      "id": "main_to_boundary",
+      "fromMapId": "hometown_main",
+      "toMapId": "boundary_pass",
+      "targetAnchorId": "boundary_entry",
+      "conditionId": "world.boundaryRouteAvailable"
+    }
+  ]
+}
+```
+
+示例只表达稳定 ID、初始灰盒预算和单向入口；实现时必须同时配置反向入口、锚点唯一性与目标存在校验。地图最终尺寸可在阶段 11 按 4 格倍数微调。碰撞、可耕区、入口和锚点优先来自明确对象层或独立配置，不能在多个组件中重复维护坐标。
 
 ## `localization.json`
 
@@ -293,6 +345,7 @@ export interface PortraitState {
 ### Demo 存档演进约束
 
 - 上述 schema 1 是已经实现的技术 MVP 事实，不直接改写成多档位或 NPC 存档。
+- SaveData v2 必须把 `player.mapId` 限制为地图目录中的稳定 ID，并增加明确的叙事/目标状态；旧 `mvp_farm` 存档迁移到 `home_interior` 的 `home_bed`，不能按原世界坐标投射到新地图。
 - 阶段 10E 先确认三档存档、调查前恢复点、Demo 结束方式以及日内时段/天气是否属于权威状态。
 - 阶段 12B 建立 SaveData v2 迁移框架、档位元数据、最近档位、损坏档隔离与旧 `autosave` 导入。
 - NPC、关系、当前目标与叙事状态分别在阶段 13～15 的 schema 确认后进入版本化存档；不得在数据结构尚未定义时预填无语义的通用字典。

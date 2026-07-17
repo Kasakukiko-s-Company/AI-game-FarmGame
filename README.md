@@ -69,6 +69,8 @@
 - 阶段 7D 已建立微信/Windows 运行环境与发行渠道的接口、目标映射和架构护栏；真实发行 composition 尚未接管 Creator 场景，留在 Demo 应用外壳与平台交付阶段完成。
 - 阶段 8A～8D 已完成固定容量背包、成熟作物收获事务、真实物品 JSON 适配、8 格快捷栏、槽位选择和选中物品驱动操作。
 - 阶段 9A～9C 已完成版本 1 存档、严格编解码、运行时快照/恢复以及浏览器本地自动存档；当前仍是一个固定 `autosave` 槽，只在成功睡觉后保存。
+- 阶段 10A 已完成 Demo 规划与文档治理，并以提交 `c98103b` 建立新的需求基线。
+- 阶段 10B 已确认纸面流程与三地图拓扑：`home_interior` 承担开场和床铺睡觉，`hometown_main` 合并农场与村庄，`boundary_pass` 承担可选的第一处结界异常；本阶段不创作或定稿美术、音乐与声音资源。
 
 ## 文档索引
 
@@ -78,6 +80,7 @@
 - [游戏设计](docs/GAME_DESIGN.md)
 - [MVP 范围与验收](docs/MVP.md)
 - [游戏 Demo 范围](docs/DEMO_SCOPE.md)
+- [Demo 开场流程与三地图拓扑](docs/DEMO_MAP_FLOW.md)
 - [叙事设定基线（内部剧透）](docs/NARRATIVE_BIBLE.md)
 - [技术规格](docs/TECH_SPEC.md)
 - [数据结构](docs/DATA_SCHEMA.md)
@@ -87,6 +90,7 @@
 - [美术资源需求清单](docs/ART_ASSET_LIST.md)
 - [UI 规格](docs/UI_SPEC.md)
 - [对话与立绘规格](docs/DIALOGUE_SPEC.md)
+- [视听资源独立任务工作流](docs/RESOURCE_CREATION_WORKFLOW.md)
 - [素材来源记录](docs/ASSET_SOURCES.md)
 - [知识产权与素材来源](docs/LEGAL_AND_IP.md)
 - [编辑器手动步骤](docs/MANUAL_STEPS.md)
