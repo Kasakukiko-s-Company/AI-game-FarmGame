@@ -42,6 +42,8 @@
 
 当前类型：`tool | seed | crop | material`。锄头和水壶既在 `items.json` 中占背包槽，也通过稳定 `toolId` 引用 `tools.json` 的行为定义。
 
+阶段 15A 接入旧矿道前，`items.json` 增加 `tool_pickaxe`、`academy_practice_wand` 与材料 `mist_iron_ore`；两件工具仍使用 `type: "tool"`，矿石使用 `type: "material"`。当前 Demo 不因矿石存在而启用 `buyPrice`、`sellPrice`、锻造或装备栏。
+
 ## `crops.json`
 
 ```json
@@ -86,6 +88,8 @@
 ```
 
 MVP 不实现耐久、升级、水量或范围强化。
+
+阶段 15A 在 schema 演进中增加工具动作 `mine` 与 `attack`。`tool_pickaxe` 使用 `mine/rangeTiles=1`；`academy_practice_wand` 使用 `attack/rangeTiles=3`。动作 ID 是领域语义，不是键盘键名或 Cocos 按钮节点名。
 
 ## `maps.json`
 
@@ -141,6 +145,14 @@ MVP 不实现耐久、升级、水量或范围强化。
       "heightTiles": 24,
       "tileSizePixels": 32,
       "safeAnchorId": "boundary_entry"
+    },
+    {
+      "id": "old_mine",
+      "displayNameKey": "map.old_mine.name",
+      "widthTiles": 32,
+      "heightTiles": 24,
+      "tileSizePixels": 32,
+      "safeAnchorId": "mine_safe_return"
     }
   ],
   "portals": [
@@ -157,16 +169,55 @@ MVP 不实现耐久、升级、水量或范围强化。
       "toMapId": "boundary_pass",
       "targetAnchorId": "boundary_entry",
       "conditionId": "world.boundaryRouteAvailable"
+    },
+    {
+      "id": "main_to_old_mine",
+      "fromMapId": "hometown_main",
+      "toMapId": "old_mine",
+      "targetAnchorId": "mine_entry",
+      "conditionId": "world.oldMineAvailable"
     }
   ]
 }
 ```
 
-示例只表达稳定 ID、初始灰盒预算和单向入口；实现时必须同时配置反向入口、锚点唯一性与目标存在校验。地图最终尺寸可在阶段 11 按 4 格倍数微调。碰撞、可耕区、入口和锚点优先来自明确对象层或独立配置，不能在多个组件中重复维护坐标。
+示例只表达稳定 ID、初始灰盒预算和单向入口；实现时必须同时配置反向入口、锚点唯一性与目标存在校验。地图最终尺寸可在阶段 11 按 4 格倍数微调。碰撞、可耕区、入口和锚点优先来自明确对象层或独立配置，不能在多个组件中重复维护坐标。`old_mine` 不连接 `boundary_pass` 或 `home_interior`。
+
+## 计划中的矿脉与敌人数据
+
+阶段 15A 冻结实际文件名和 schema 版本前，以下只表达已确认字段语义，不授权现在创建运行时 JSON：
+
+```json
+{
+  "oreNodes": [
+    {
+      "id": "ore_vein_common",
+      "requiredToolAction": "mine",
+      "hitPoints": 3,
+      "yieldItemId": "mist_iron_ore",
+      "yieldQuantity": 1
+    }
+  ],
+  "enemies": [
+    {
+      "id": "enemy_cave_mote",
+      "maxHealth": 3,
+      "contactDamage": 1,
+      "perceptionRangeTiles": 5
+    }
+  ]
+}
+```
+
+- 地图实例必须另有稳定 `nodeId` 或 `encounterId`；定义 ID 不能代替实例 ID。
+- 矿脉产物必须引用 `items.json` 的材料，命中次数为正整数。
+- 敌人生命和伤害为正整数；普通敌人数据不得引用战争残响或隐藏真相分类。
+- 表现资源、动画、声音和 Cocos UUID 不进入领域定义。
+- 当前切片只有一类矿脉和一类敌人；新增定义属于范围变更，不是简单补数据。
 
 ## 计划中的第一处异常配置与叙事状态
 
-阶段 10D 已锁定 `boundary_pass` 的第一处异常，但当前尚未创建运行时 JSON、解码器或通用事件系统。阶段 15 实现时应使用稳定语义配置连接地图锚点、叙事状态与表现配置，不把世界坐标、Cocos UUID、文件路径或音频路径写进剧情状态机。
+阶段 10D 已锁定 `boundary_pass` 的第一处异常，但当前尚未创建运行时 JSON、解码器或通用事件系统。阶段 15B 实现时应使用稳定语义配置连接地图锚点、叙事状态与表现配置，不把世界坐标、Cocos UUID、文件路径或音频路径写进剧情状态机。
 
 建议的最小配置形状：
 
@@ -336,7 +387,7 @@ export interface CharacterAgeProfile {
 }
 ```
 
-阶段 10E 必须锁定 `daysPerYear` 与 `openingDayOfYear`。`ageAtOpening` 表示开场时刻已经成立的年龄；当前年龄等于该值加上 `(openingInstant, currentInstant]` 半开半闭区间内跨过的生日次数。开场日自身不重复结算生日，因此生日序号与开场日相同的乔苓只会在累计经过整整一个游戏年时从 17 岁变为 18 岁。示例中的生日序号只表达 schema 形状，具体角色生日需在世界历法确认后定稿。
+阶段 10E 已锁定四季、每季 30 天、`daysPerYear=120`、`openingDayOfYear=1` 和 `openingWorldDay=1`。`ageAtOpening` 表示开场时刻已经成立的年龄；当前年龄等于该值加上 `(openingWorldDay, currentWorldDay]` 半开半闭区间内跨过的生日次数。开场日自身不重复结算生日，因此 `birthdayDayOfYear=1` 的乔苓在 `worldDay=120` 仍为 17 岁，只在 `worldDay=121` 进入第 2 年春季第 1 日时满 18 岁。其他角色具体生日在阶段 13 数据落地前逐一确认。
 
 `playerRomancePolicy` 是稳定的人物内容边界，不是随年龄或性别组合自动改变的资格缓存。当前罗岑山、陈蕴及未来明确定位为老年长辈的角色使用 `platonic_only`；他们仍保留完整好感，但不进入暧昧、告白、恋爱或求婚。其他可能在成年后发展恋爱的 NPC 使用 `standard`，已有关系不会因角色在长期存档中自然变老或玩家选择另一主角形态而被自动解除。
 
@@ -511,11 +562,57 @@ export interface RelationshipState {
 
 - 上述 schema 1 是已经实现的技术 MVP 事实，不直接改写成多档位或 NPC 存档。
 - SaveData v2 必须把 `player.mapId` 限制为地图目录中的稳定 ID，并增加明确的叙事/目标状态；旧 `mvp_farm` 存档迁移到 `home_interior` 的 `home_bed`，不能按原世界坐标投射到新地图。
-- 阶段 10E 先确认三档存档、调查前恢复点、Demo 结束方式、`daysPerYear`、`openingDayOfYear`，以及日内时段/天气是否属于权威状态。角色年龄依赖的世界历法不能继续留作纯表现选项。
-- 阶段 12B 建立 SaveData v2 迁移框架、档位元数据、最近档位、损坏档隔离与旧 `autosave` 导入，并为阶段 10C 已确认的 `PlayerIdentityProfile` 与 `RelationshipState` 提供明确版本槽位；权威累计游戏日必须能确定性还原当前年份、年内日和角色年龄。
+- 阶段 10E 已确认三个稳定档位 `profile-1`～`profile-3`、最近档位、单档损坏隔离、未来同档受保护恢复点、Demo 结束方式和 120 日历法。SaveData v2 使用一基累计 `worldDay`，不保存可推导的年份/季节，也不加入 `timeOfDay`、`dayPhase` 或 `weatherId`；后续范围变更同时确认了玩家生命和当日矿洞状态。
+- 阶段 12B 建立 SaveData v2 迁移框架、可重建档位摘要、最近档位、损坏档隔离与旧 `autosave` 全事务导入，并为阶段 10C 已确认的 `PlayerIdentityProfile` 与 `RelationshipState` 提供明确版本槽位；权威累计世界日必须能确定性还原当前年份、年内日和角色年龄。v1 导入默认满生命、空矿洞状态，不根据旧地图或日期猜测矿洞进度。
 - 阶段 13 实现并迁移 15 份关系记录、多个 `dating`、唯一 `spouseCharacterId`、告白/求婚事务与动态年龄查询；阶段 14 的跨天结算负责生日/成年事件，当前目标与叙事状态分别在阶段 14～15 的 schema 确认后进入版本化存档。阶段 10D 已提供第一处异常的四个稳定状态语义，但仍不得预填无语义的通用字典或保存演出瞬态。
 - 每次迁移必须从真实旧版本样例开始测试；读取失败不得覆盖原档，单个损坏档不得阻塞其他档位。
-- 三个普通档位不能代替未来的“调查前恢复点”。如果阶段 10E 把恢复点列为 Demo 必须项，它必须是同档位内受保护、不会被普通自动保存覆盖的独立快照。
+- 三个普通档位不能代替未来的“调查前恢复点”。档位容器必须区分 `currentSnapshot` 与可空的 `protectedRecoverySnapshot`；当前 Demo 后者保持为空，普通自动保存永远不能覆盖它。
+- 全局设置与 `lastPlayedProfileId` 不属于 SaveData v2；它们使用独立应用数据。档位摘要可以从当前快照重建，不能成为三个档位共同失效的单点。
+- 旧 v1 `currentDay` 同值迁移为 `worldDay`；玩家落到 `home_bed`。旧 10×10 农田只能通过阶段 11 锁定的命名导入区域整体平移，任一格无法安全映射时整次迁移失败并保留旧载荷。
+
+### SaveData v2 的生命与矿洞状态
+
+```ts
+export interface PlayerVitalsState {
+  readonly health: number;
+  readonly maxHealth: 5;
+}
+
+export interface MineRunState {
+  readonly mapId: 'old_mine';
+  readonly worldDay: number;
+  readonly brokenNodeIds: readonly string[];
+  readonly defeatedEncounterIds: readonly string[];
+}
+```
+
+- 稳定快照中的 `health` 必须为 `1～5`；生命为 0 只能存在于尚未完成的安全撤离事务中。
+- `mineRun.worldDay` 必须等于存档 `worldDay`；跨天先清空 ID 列表并恢复满生命，再提交新日快照。
+- 两类 ID 各自唯一，并能解析到 `old_mine` 的稳定实例目录；未知或重复 ID 使快照验证失败。
+- 不保存矿脉中间命中次数、敌人当前生命/位置、投射物、冷却、无敌计时、击退或动画帧。
+- 完整规则和恢复点见 `docs/MINE_COMBAT_SLICE.md`。
+
+### 计划中的档位容器
+
+```ts
+export type PlayerProfileId = 'profile-1' | 'profile-2' | 'profile-3';
+
+export interface PlayerProfileMetadata {
+  readonly profileId: PlayerProfileId;
+  readonly savedAt: string;
+  readonly worldDay: number;
+  readonly mapId: string;
+  readonly demoMilestoneReached: boolean;
+}
+
+export interface PlayerProfileSlot {
+  readonly metadata: PlayerProfileMetadata;
+  readonly currentSnapshot: SaveDataV2;
+  readonly protectedRecoverySnapshot: SaveDataV2 | null;
+}
+```
+
+该接口表达逻辑角色，不要求平台把三部分写进一个 JSON。实际存储必须让单档损坏隔离，并允许在摘要损坏时通过稳定档位 ID 扫描/重建。完整交互和事务见 `docs/DEMO_SAVE_AND_CALENDAR.md`。
 
 ## Required Validation
 
@@ -541,8 +638,15 @@ export interface RelationshipState {
 - 每名使用立绘的角色都有可解析的默认状态；目录中的 `assetId` 能映射到已导入资源；`direction` 仅为 `left` 或 `right`。
 - 对白引用的精确状态不存在时给出包含对白行 ID 的诊断，并按固定规则回退；禁止通过正文猜测表情。
 - 第一处异常配置引用存在的地图、触发区、返回锚点、线索锚点、条件、表现与对白 ID；只有面向出口的单次语义交互能启动，进入地图或日期变化不会启动。
+- `old_mine` 只与 `hometown_main` 双向连接；矿脉 `nodeId`、遭遇 `encounterId` 和命名安全锚点存在且不重复。
+- 锄镐、练习杖和矿石引用存在且类型/动作匹配；背包满时采矿事务不提交破碎状态。
 - `mystery.firstBarrierObserved` 与 `mystery.boundaryRibbonInspected` 可以独立表示“见过但未检查”和“稍后检查”；演出瞬态、粒子、摄像机和音频进度不进入存档。
 - 存档版本受支持，保存时间为标准 UTC ISO 时间，玩家地图与农田地图一致。
+- `worldDay` 为正整数；`1/30/31/120/121` 必须分别推导为第 1 年春 1 日、春 30 日、夏 1 日、冬 30 日和第 2 年春 1 日。
+- 玩家生命和矿洞当日状态满足上述 v2 不变量；安全撤离不推进 `worldDay`、不减少背包，也不清空当日完成 ID。
+- 档位 ID 只能是三个稳定值；最近档位只在成功载入后更新；当前快照和受保护恢复点角色不能混淆。
+- 一个档位的损坏、未来版本或存储失败不得改变另两个档位；摘要损坏时可以从有效快照重建。
+- v1→v2 迁移必须全有或全无，失败时保留旧 `autosave`；乔苓在 `worldDay=120` 仍未成年、在 `worldDay=121` 进入成年规则，生日事件不可重复。
 - 背包固定为 8 格；选中槽、物品 ID、正数量和 `maxStack` 必须合法。
 - 已耕地必须位于对应地图可耕区内且坐标不可重复；浇水日期不得晚于当前日期。
 - 作物 ID、种植日、成长进度、视觉阶段和最后结算日必须与 `crops.json` 及当前日期一致。

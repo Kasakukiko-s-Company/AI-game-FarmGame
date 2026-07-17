@@ -19,6 +19,8 @@
 - `core`：游戏生命周期、事件、时间、命令调度、存档编排。
 - `player`：玩家领域状态、移动意图、朝向、交互意图。
 - `farming`：地块、工具动作、作物种植、浇水、成长、收获。
+- `exploration`：矿脉、当日矿洞状态与采集事务。
+- `combat`：生命、伤害、攻击、敌人规则与安全撤离事务。
 - `inventory`：物品堆叠、容量、添加与移除。
 - `world`：地图查询、坐标转换、碰撞和交互目标。
 - `ui`：视图状态、快捷栏和 HUD，不承载领域规则。
@@ -86,13 +88,15 @@ windows-native  + steam
   - `clock`
   - `inventory`
   - `farm`
+  - `vitals`
+  - `mineRun`
   - `npcs`
   - `relationships`
   - `objectives`
   - `narrative`
   - `settings`
 
-场景节点只保存渲染缓存和组件引用。改变状态必须通过明确命令，例如 `TillTile`、`PlantCrop`、`WaterTile`、`EndDay`、`HarvestCrop`。
+场景节点只保存渲染缓存和组件引用。改变状态必须通过明确命令，例如 `TillTile`、`PlantCrop`、`WaterTile`、`EndDay`、`HarvestCrop`、`MineNode`、`Attack`、`ApplyDamage`、`ResolveMineRetreat`。
 
 当前技术 MVP 尚未拥有上述完整 `GameState`；`TiledTillingController` 临时集中持有日期、农田、背包、快捷栏动作、睡眠和部分恢复入口。阶段 12A 在不改变玩法行为的前提下提取运行时会话/命令协调器，后续 NPC、关系、目标和叙事状态不得继续堆入该历史命名组件。
 
@@ -123,26 +127,26 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 - `savedAt`
 - `playerPosition`
 - `playerFacing`
-- `currentDay`
-- `timeOfDay`
+- `worldDay`
 - `inventory`
 - `selectedSlot`
 - `farmTiles`
 - `cropStates`
-- `settings`
+- `playerVitals`
+- `mineRun`
 - `npcStates`
 - `relationships`
 - `objectives`
 - `narrativeFlags`
 
-当前版本 1 实际只包含玩家、日期、背包、农田和作物。`timeOfDay`、`settings`、NPC、关系、目标和叙事字段是 Demo 规划项，不得误记为已实现；字段与迁移顺序在阶段 10E、12B、13～15 逐步冻结。
+当前版本 1 实际只包含玩家、`currentDay`、背包、农田和作物。阶段 10E 已确认 v2 把它迁移为一基累计 `worldDay`，加入玩家生命和当日矿洞状态，并明确不保存天气或连续日内时钟。全局设置与 `lastPlayedProfileId` 也不进入玩法快照；NPC、关系、目标和叙事字段仍按阶段 12B～15 逐步冻结，不得误记为已实现。
 
 规则：
 
 - 使用稳定 ID 和纯 JSON 数据，不保存 Cocos 对象引用。
 - 写入采用临时数据校验后替换，避免半写入覆盖有效档。
 - 读取先解析、校验版本，再迁移或拒绝。
-- 技术 MVP 只需要一个槽位和最小迁移入口；Demo 的多档位、旧单槽导入和后续 NPC/叙事扩展需要明确版本迁移，但不建立无法测试的通用迁移框架。
+- 技术 MVP 仍使用一个槽位；Demo 已锁定三个稳定档位、最近档位、单档损坏隔离、旧单槽全事务导入和未来受保护恢复快照角色。阶段 12B 只实现真实 v1→v2 路径，不建立无法测试的通用迁移框架。
 
 ## Coordinate System
 
@@ -157,17 +161,31 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 
 ## Demo Multi-Map Contract
 
-阶段 10B 将 Demo 的玩法地图固定为 `home_interior`、`hometown_main` 和 `boundary_pass`。标题与档位界面是应用 UI，不作为玩法地图参与玩家位置存档。
+阶段 10B 将三张核心地图固定为 `home_interior`、`hometown_main` 和 `boundary_pass`；阶段 10E 的用户范围变更增加固定单层 `old_mine`。标题与档位界面是应用 UI，不作为玩法地图参与玩家位置存档。
 
 - 地图切换使用稳定 `mapId`、命名入口和命名目标锚点，不允许业务组件直接写另一张地图的世界坐标。
-- `home_interior <-> hometown_main` 通过住宅门双向连接；`hometown_main <-> boundary_pass` 通过北侧山路双向连接；不存在住宅直达边界的入口。
+- `home_interior <-> hometown_main` 通过住宅门双向连接；`hometown_main <-> boundary_pass` 通过北侧山路双向连接；`hometown_main <-> old_mine` 通过矿道入口双向连接。住宅、边界和矿洞之间不存在直达入口。
 - 切换流程必须抑制世界输入，加载目标地图、定位玩家和摄像机后再恢复输入，避免按键释放事件串入下一地图。
 - 开放条件由显式叙事状态查询，不由地图组件推测日期或对白内容。日期只可作为条件之一，不能单独触发结界异常。
 - 加载失败必须留在来源地图或回退到目标地图的命名安全锚点，并提供可诊断错误；禁止回退到未验证的 `(0, 0)`。
 - SaveData v2 保存当前 `mapId`、位置/朝向和叙事状态。旧 SaveData v1 没有可依赖的 Demo 地图身份，迁移后落到 `home_bed`，不能把 `mvp_farm` 当成正式日常主区域。
-- 普通地图切换不推进日期，也不擅自改变阶段 9 已有的“成功睡觉后自动保存”语义；是否增加安全检查点由阶段 10E 和 12B 决定。
+- 在 `old_mine` 读取非法位置时回退 `mine_safe_return`；矿洞加载器只消费稳定矿脉/遭遇 ID，不保存敌人临时位置或投射物。
+- 普通地图切换不推进日期，也不单独保存。阶段 10E 已把稳定保存点锁定为新档初始化、成功睡觉结算、第一处异常安全恢复，以及稳定状态下“保存并返回标题”；阶段 12B 负责实现。
 
-阶段 11 只实现通用的三地图灰盒装载与入口契约，不把正式地图美术、异常音画表现或 NPC 内容硬编码进场景切换器。
+阶段 11 只实现通用的四地图灰盒装载与入口契约，不把正式地图美术、矿洞玩法、异常音画表现或 NPC 内容硬编码进场景切换器。
+
+### Planned Mine and Combat Slice
+
+阶段 15A 按以下 deep module 边界实现，不能把规则堆入 `TiledTillingController` 或敌人节点：
+
+- `MineNodeRules` 接收矿脉定义、稳定实例状态、工具动作与背包容量，返回原子的命中/破碎/背包满结果；只有最终产物能加入背包时才提交破碎。
+- `CombatRules` 接收玩家/敌人权威生命、攻击定义和碰撞命中事实，返回伤害与撤离意图；表现帧、粒子和音频不是判定输入。
+- `MineRunState` 只保存当前 `worldDay` 的 `brokenNodeIds` 与 `defeatedEncounterIds`；中间矿脉生命和未完成敌人状态在读取时从目录重建。
+- `ResolveMineRetreat` 是生命归零后的唯一提交 seam：抑制输入、定位 `mine_safe_return`、恢复生命、保留背包和当日完成 ID，不推进日期。
+- Tiled/Cocos adapter 负责节点发现、世界坐标、碰撞和只读视图；平台 input adapter 只提供 `primaryAction` 与移动语义。
+- 睡觉事务在推进 `worldDay` 时同时清空矿洞当日状态并恢复满生命，再执行自动保存。
+
+详细数值、地图锚点、存档字段和验收见 `docs/MINE_COMBAT_SLICE.md`。
 
 阶段 10D 进一步锁定第一处异常的技术边界：
 
@@ -446,6 +464,20 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 - 自动保存触发点当前只有成功睡觉。睡觉后尚未再次睡觉的移动、工具操作或背包变化不会被保存，这是 MVP 的明确事务边界，不是假定的即时存档。
 - 浏览器预览的存储受页面来源和端口隔离。阶段 17～18 必须在微信小游戏环境验证存储实现、前后台生命周期与真机行为；阶段 19 必须为 Windows 明确选择稳定本地文件或原生 adapter；阶段 20 再评估 Steam Auto-Cloud。所有实现继续通过 `ISaveService` 注入。
 
+### Demo Profile and Calendar Target
+
+阶段 10E 锁定但尚未实现的目标如下：
+
+- `profile-1`、`profile-2`、`profile-3` 分别拥有当前快照；最近档损坏时进入档位管理，不静默跳档。
+- 档位摘要可以从快照重建；全局设置与 `lastPlayedProfileId` 使用独立应用存储，不能因一个玩法档损坏而全部失效。
+- 档位容器预留可空的 `protectedRecoverySnapshot`。当前 Demo 不创建它；未来不可逆确认只有在该快照写入并回读验证成功后才可继续。
+- v1 `autosave` 显式导入第一个空档，`currentDay` 同值迁移为 `worldDay`，玩家回退 `home_bed`，旧农田只通过命名 10×10 导入区域整体迁移。
+- 四季×30 日、每年 120 天；`worldDay=1` 是第 1 年春 1 日。所有日期显示、生日和年龄查询复用一个纯历法 module。
+- SaveData v2 不包含 `timeOfDay` 或 `weatherId`。阶段 11 的昼夜/雨景是表现预设，不参与结算。
+- SaveData v2 包含 `playerVitals` 和当前日 `mineRun`；v1 迁移默认满生命/空矿洞状态，生命为 0 或矿洞日与 `worldDay` 不一致的快照无效。
+
+完整事务、UI 行为、迁移失败规则和验收边界见 `docs/DEMO_SAVE_AND_CALENDAR.md` 与 `docs/MINE_COMBAT_SLICE.md`。
+
 ## Event Examples
 
 - `GAME_LOADED`
@@ -473,8 +505,8 @@ Cocos Keyboard Events → KeyboardInputBridge → IInputService
 
 ## Testing Strategy
 
-- 纯 TypeScript 单元测试：坐标、背包、作物成长、日结算、存档序列化与迁移。
-- Cocos 组件集成测试：输入桥接、节点同步、碰撞和场景加载。
+- 纯 TypeScript 单元测试：坐标、背包、作物成长、日结算、矿脉事务、伤害/撤离、存档序列化与迁移。
+- Cocos 组件集成测试：输入桥接、节点同步、碰撞、场景加载、敌人接触和暂停/后台输入释放。
 - 手工矩阵：编辑器预览、Steam Windows 构建、微信开发者工具、微信真机。
 - 每个缺陷先尽量在纯逻辑层建立回归测试。
 
