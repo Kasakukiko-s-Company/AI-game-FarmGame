@@ -206,20 +206,45 @@ export interface PortraitState {
 
 `dimmed` 是可选的 UI 焦点覆盖值，不参与立绘资源身份或文件命名。正常对白不需要逐行填写：当前说话者默认正常亮度，其他显示中的角色默认 dim。关系和剧情状态可以选择不同对白行，但程序禁止分析 `textKey` 对应的正文来猜测表情。
 
+### 计划中的主角身份
+
+```ts
+export type PlayerGenderForm = 'male' | 'female';
+
+export interface PlayerIdentityProfile {
+  readonly genderForm: PlayerGenderForm;
+}
+```
+
+`genderForm` 表示玩家选择的男性或女性主角形态，影响场景 Sprite、立绘/头像、称谓和显式配置的对白差分，但不得作为 NPC 恋爱资格过滤条件。技术 MVP 可以继续使用现有男性占位形态；正式支持第二种形态时，该值必须进入版本化存档并由新游戏流程明确选择。
+
 ### 计划中的 `characters.json`
 
 角色数据保存稳定状态 ID 与逻辑资源 ID，不保存磁盘路径、Cocos UUID 或平台路径：
+
+`characters.json` 只允许保存玩家可见或日常运行必需的数据。`originType`、`truthKnowledgeLevel`、`concealmentStance` 等内部字段不得出现；幸存者/重构村民分类和真相立场按 `docs/adr/0003-separate-public-npc-data-from-hidden-origin.md` 与通用角色目录隔离。角色的默认地图锚点属于地图出现规则，内容制作层级属于内部生产清单，也不塞进立绘目录。
 
 ```json
 {
   "schemaVersion": 1,
   "characters": [
     {
-      "id": "npc_anna",
-      "displayNameKey": "character.anna.name",
+      "id": "npc_shen_he",
+      "displayNameKey": "character.shen_he.name",
+      "gender": "female",
+      "ageProfile": {
+        "ageAtOpening": 23,
+        "birthdayDayOfYear": 1
+      },
+      "adultMaritalStatus": "unmarried",
+      "priorBondId": "farm_work_familiar",
+      "relationshipRules": {
+        "affinityEnabled": true,
+        "playerRomancePolicy": "standard"
+      },
       "portrait": {
         "defaultState": {
-          "characterId": "npc_anna",
+          "characterId": "npc_shen_he",
           "expression": "neutral",
           "pose": "default",
           "costume": "default",
@@ -230,7 +255,7 @@ export interface PortraitState {
             "expression": "neutral",
             "pose": "default",
             "costume": "default",
-            "assetId": "portrait.npc_anna.default.default.neutral",
+            "assetId": "portrait.npc_shen_he.default.default.neutral",
             "mirrorSafe": true
           },
           {
@@ -238,7 +263,7 @@ export interface PortraitState {
             "pose": "hands_together",
             "costume": "default",
             "effect": "blush",
-            "assetId": "portrait.npc_anna.default.hands_together.shy.blush",
+            "assetId": "portrait.npc_shen_he.default.hands_together.shy.blush",
             "mirrorSafe": true
           }
         ]
@@ -248,21 +273,119 @@ export interface PortraitState {
 }
 ```
 
+`priorBondId` 只声明主角为何与该人物熟悉，供开场对白选择器使用；它不是好感数值，不会自动授予亲密阶段。第一章后的关系进度另行存储为新生关系状态。
+
+`gender`、`ageProfile`、`adultMaritalStatus` 和 `playerRomancePolicy` 是玩家可见人物资料的权威输入，不是隐藏真相分类。`gender` 用于人物身份和表现差分，不决定能否与主角恋爱。当前年龄由世界日期计算，不能把开场年龄当作永久常量；是否属于老年长辈的非恋爱内容边界则由人物设定显式声明，不能只靠年龄数字猜测。当前 15 名角色以及未来加入正式角色目录的每一名可交谈 NPC，其 `affinityEnabled` 都必须为 `true`。
+
+```ts
+export type CharacterGender = 'female' | 'male';
+export type AdultMaritalStatus =
+  | 'unmarried'
+  | 'married'
+  | 'widowed';
+
+export type PlayerRomancePolicy =
+  | 'standard'
+  | 'platonic_only';
+
+export interface CharacterAgeProfile {
+  readonly ageAtOpening: number;
+  readonly birthdayDayOfYear: number;
+}
+```
+
+阶段 10E 必须锁定 `daysPerYear` 与 `openingDayOfYear`。`ageAtOpening` 表示开场时刻已经成立的年龄；当前年龄等于该值加上 `(openingInstant, currentInstant]` 半开半闭区间内跨过的生日次数。开场日自身不重复结算生日，因此生日序号与开场日相同的乔苓只会在累计经过整整一个游戏年时从 17 岁变为 18 岁。示例中的生日序号只表达 schema 形状，具体角色生日需在世界历法确认后定稿。
+
+`playerRomancePolicy` 是稳定的人物内容边界，不是随年龄或性别组合自动改变的资格缓存。当前罗岑山、陈蕴及未来明确定位为老年长辈的角色使用 `platonic_only`；他们仍保留完整好感，但不进入暧昧、告白、恋爱或求婚。其他可能在成年后发展恋爱的 NPC 使用 `standard`，已有关系不会因角色在长期存档中自然变老或玩家选择另一主角形态而被自动解除。
+
+亲近表现范围和告白结果都不作为容易过期的静态布尔值写入角色 JSON，而由共享关系规则根据人物边界、角色资料、当前日期、好感和关系状态计算：
+
+- `ageAtOpening` 必须是非负整数，`birthdayDayOfYear` 必须位于世界历法范围；
+- `playerRomancePolicy: 'platonic_only'` 时只允许非恋爱关系内容，告白固定返回 `unavailable`；
+- `playerRomancePolicy: 'standard'` 且当前没有配偶时，可以进入与年龄相符的亲近表现；NPC 性别和主角性别形态不参与资格过滤，`adultMaritalStatus: 'unmarried'` 和 `'widowed'` 都属于当前无配偶，`'married'` 不属于；
+- 当前年龄低于 18 岁时，当前婚姻状态由查询返回 `not_applicable`；告白必须先返回 `rejected_minor`，不能继续用好感覆盖该结果；
+- 当前年龄不低于 18 岁且当前无配偶时，好感低于配置门槛返回 `rejected_low_affinity`，达到门槛返回 `accepted` 并由事务建立 `dating`；
+- `platonic_only` 或当前已有配偶者返回 `unavailable`；运行时不得根据主角/NPC 性别组合、名字、对白文字或幸存者/重构村民分类改变结果。
+
+游戏开场时，宁昭、晏巡、杜蘅、乔榆、沈禾、文澍、穆原、唐米、何舟、黎青和池雀十一名成年人按好感判定告白。罗岑山和陈蕴使用 `playerRomancePolicy: 'platonic_only'`，不出现暧昧且告白固定为 `unavailable`。乔苓使用 `ageAtOpening: 17`，其生日序号必须与开场日在历法中的序号一致，因此经过一个完整游戏年后，下一次告白从 `rejected_minor` 改为按好感判定；阿桃使用 `ageAtOpening: 10`，未来跨过第八次生日后同理。两人的 `adultMaritalStatus` 都是 `unmarried`，但成年前当前婚姻状态始终为 `not_applicable`。
+
 第一版运行时 `assetId` 通常映射到一张合成 PNG；未来即使 PC 使用更高分辨率导出，对话 JSON 和角色状态 ID 也不变。角色默认状态引用的资源必须实际存在。
+
+### 计划中的关系状态
+
+```ts
+export type AffinityRank =
+  | 'strained'
+  | 'neutral'
+  | 'friendly'
+  | 'trusted'
+  | 'close';
+
+export type RomanceState =
+  | 'none'
+  | 'dating'
+  | 'married';
+
+export type ConfessionStatus =
+  | 'accepted'
+  | 'rejected_minor'
+  | 'rejected_low_affinity'
+  | 'unavailable'
+  | 'already_dating';
+
+export type ProposalStatus =
+  | 'accepted'
+  | 'not_dating'
+  | 'affinity_not_maxed'
+  | 'already_has_spouse'
+  | 'unavailable';
+
+export interface CharacterRelationshipState {
+  readonly characterId: string;
+  readonly affinityPoints: number;
+  readonly affinityRank: AffinityRank;
+  readonly romanceState: RomanceState;
+  readonly eventFlags: ReadonlyArray<string>;
+}
+
+export interface RelationshipState {
+  readonly entries: ReadonlyArray<CharacterRelationshipState>;
+  readonly spouseCharacterId: string | null;
+}
+```
+
+关系状态遵守以下不变量：
+
+- 当前 15 名 NPC 每人都有且只有一份 `CharacterRelationshipState`；未来角色进入正式目录时也必须同时建立关系记录，角色内容层级不能省略它。
+- 新存档的 `affinityPoints` 从 `0`、`affinityRank: 'neutral'` 开始。旧日熟悉由 `priorBondId` 保留，不能转成免费好感。
+- `affinityPoints` 使用有符号整数，允许因失信、冲突或拒绝下降；具体等级阈值留到阶段 13 的数值配置，不散落在对白或 UI 中。
+- `romanceState: 'none'` 只表示告白尚未被接受，不兼任亲近表现或告白资格字段；轻微暧昧、高好感和告白拒绝都仍保持 `none`。
+- 存档保存权威的世界日期或累计天数以及角色出生资料，不单独保存 `currentAge`；读取后统一推导当前年龄，避免改历法、迁移旧档或跨年结算时出现年龄漂移。
+- 同一 `RelationshipState` 可以有多个 `dating`，不使用全局单一“恋人 ID”。
+- 告白事务按“是否 `standard` 且为当前无配偶 NPC → 是否年满 18 岁 → 是否已经 `dating` → 是否达到告白好感门槛”的固定顺序返回 `ConfessionStatus`；主角与 NPC 性别均不参与资格判定，`platonic_only` 返回 `unavailable`，重复告白返回 `already_dating`，只有 `accepted` 可以把 `none` 改成 `dating`。
+- 求婚只能针对 `dating` 且好感达到配置上限的成年 NPC；好感达到上限只开放求婚，不自动写入婚姻。
+- `spouseCharacterId` 为空时不得有 `married`；非空时必须存在且只存在一个与之相同的 `married` 条目，并且目标在求婚事务发生时必须仍为成年、`standard` 且当前无配偶，不限制目标性别。
+- 已有 `spouseCharacterId` 时第二次结婚事务必须返回拒绝结果，不得覆盖原值。
+- 结婚事务不自动清除其他 `dating` 或好感记录；后续剧情可以通过显式事务改变它们，但不能由存档解码器或 UI 静默处理。
+- 恋爱和婚姻都需要专属事件与玩家确认；好感达到门槛只影响告白或求婚是否可成功，不自动修改 `romanceState`。
+- 未成年角色的普通好感和非恋爱人物事件可以保存，但其 `romanceState` 必须为 `none`，且 `eventFlags` 不得包含告白成功、约会、恋爱或婚姻进度。单方面稚嫩好感只能作为适龄对白内容，跨过 18 岁生日也不能自动转成恋爱。
+- 当前不建立 NPC 与 NPC 之间的 `dating`、`married` 或告白事务；他们之间的友情、信任、竞争和厌恶属于后续独立关系数据，不复用玩家恋爱状态。
+
+阶段 13 需要为上述状态提供纯 TypeScript 事务、迁移与不变量测试。当前阶段只冻结契约，不提前修改技术 MVP 的 save schema 1。
 
 ### 计划中的 `dialogues/*.json`
 
 ```json
 {
   "schemaVersion": 1,
-  "dialogueId": "anna_friend_thanks",
+  "dialogueId": "shen_he_farm_reacquaintance",
   "lines": [
     {
-      "id": "anna_friend_thanks_01",
-      "speakerId": "npc_anna",
-      "textKey": "dialogue.anna.friend.thanks_01",
+      "id": "shen_he_farm_reacquaintance_01",
+      "speakerId": "npc_shen_he",
+      "textKey": "dialogue.shen_he.farm_reacquaintance_01",
       "portrait": {
-        "characterId": "npc_anna",
+        "characterId": "npc_shen_he",
         "expression": "shy",
         "pose": "hands_together",
         "effect": "blush",
@@ -270,11 +393,11 @@ export interface PortraitState {
       }
     },
     {
-      "id": "anna_friend_thanks_02",
-      "speakerId": "npc_anna",
-      "textKey": "dialogue.anna.friend.thanks_02",
+      "id": "shen_he_farm_reacquaintance_02",
+      "speakerId": "npc_shen_he",
+      "textKey": "dialogue.shen_he.farm_reacquaintance_02",
       "portrait": {
-        "characterId": "npc_anna",
+        "characterId": "npc_shen_he",
         "expression": "smile",
         "direction": "left"
       }
@@ -346,9 +469,9 @@ export interface PortraitState {
 
 - 上述 schema 1 是已经实现的技术 MVP 事实，不直接改写成多档位或 NPC 存档。
 - SaveData v2 必须把 `player.mapId` 限制为地图目录中的稳定 ID，并增加明确的叙事/目标状态；旧 `mvp_farm` 存档迁移到 `home_interior` 的 `home_bed`，不能按原世界坐标投射到新地图。
-- 阶段 10E 先确认三档存档、调查前恢复点、Demo 结束方式以及日内时段/天气是否属于权威状态。
-- 阶段 12B 建立 SaveData v2 迁移框架、档位元数据、最近档位、损坏档隔离与旧 `autosave` 导入。
-- NPC、关系、当前目标与叙事状态分别在阶段 13～15 的 schema 确认后进入版本化存档；不得在数据结构尚未定义时预填无语义的通用字典。
+- 阶段 10E 先确认三档存档、调查前恢复点、Demo 结束方式、`daysPerYear`、`openingDayOfYear`，以及日内时段/天气是否属于权威状态。角色年龄依赖的世界历法不能继续留作纯表现选项。
+- 阶段 12B 建立 SaveData v2 迁移框架、档位元数据、最近档位、损坏档隔离与旧 `autosave` 导入，并为阶段 10C 已确认的 `PlayerIdentityProfile` 与 `RelationshipState` 提供明确版本槽位；权威累计游戏日必须能确定性还原当前年份、年内日和角色年龄。
+- 阶段 13 实现并迁移 15 份关系记录、多个 `dating`、唯一 `spouseCharacterId`、告白/求婚事务与动态年龄查询；阶段 14 的跨天结算负责生日/成年事件，当前目标与叙事状态分别在阶段 14～15 的 schema 确认后进入版本化存档，不得预填无语义的通用字典。
 - 每次迁移必须从真实旧版本样例开始测试；读取失败不得覆盖原档，单个损坏档不得阻塞其他档位。
 - 三个普通档位不能代替未来的“调查前恢复点”。如果阶段 10E 把恢复点列为 Demo 必须项，它必须是同档位内受保护、不会被普通自动保存覆盖的独立快照。
 
@@ -363,6 +486,15 @@ export interface PortraitState {
 - 农田矩形位于地图边界内。
 - 本地化默认语言覆盖所有 MVP 可见键。
 - 角色 ID、对白 ID、对白行 ID、立绘状态 ID 与逻辑资源 ID 格式合法且在各自作用域内唯一。
+- 角色目录中的 15 人都启用好感；`ageAtOpening` 和 `birthdayDayOfYear` 合法，当前年龄只能由角色年龄资料、历法配置和权威累计游戏日计算。
+- 每个日期快照都满足：`standard` 的当前无配偶 NPC 可进入适龄亲近内容；成年人按好感判定告白，未成年人固定返回 `rejected_minor`。开场按好感判定者为宁昭、晏巡、杜蘅、乔榆、沈禾、文澍、穆原、唐米、何舟、黎青和池雀；乔苓在一个完整游戏年后的 18 岁生日之后才改用好感判定。
+- `platonic_only` 角色无论好感、年龄或婚姻状态如何都返回 `unavailable`，不得拥有暧昧、告白成功、约会、恋爱、求婚或婚姻事件标记；当前样例必须覆盖罗岑山和陈蕴。
+- 当前未成年角色不得处于 `dating` 或 `married`，告白无论好感多高都返回 `rejected_minor`；跨生日、保存、重读和旧档迁移后结果必须一致。
+- 好感低于门槛的成年无配偶 NPC 返回 `rejected_low_affinity`，达到门槛且尚未恋爱时返回 `accepted`；切换主角性别形态不得改变相同状态的结果，亲近表现本身不改变 `romanceState`。
+- 对已经 `dating` 的角色重复告白返回 `already_dating`，不重复写事件标记，也不改变好感。
+- 只有 `dating` 且好感达到配置上限的对象可以进入求婚；成功结婚后其他 `dating` 不被系统自动清除。
+- 关系条目与角色目录一一对应；好感值是整数，等级与配置阈值一致，事件标记不重复。
+- 可以同时存在多个 `dating`；最多一个 `married`，且必须与唯一 `spouseCharacterId` 双向一致，不限制配偶性别。已有配偶时不得覆盖为第二人。
 - 非旁白对白的 `speakerId` 存在；`portrait.characterId` 通常与说话者一致；`textKey` 在默认语言中存在。
 - 每名使用立绘的角色都有可解析的默认状态；目录中的 `assetId` 能映射到已导入资源；`direction` 仅为 `left` 或 `right`。
 - 对白引用的精确状态不存在时给出包含对白行 ID 的诊断，并按固定规则回退；禁止通过正文猜测表情。

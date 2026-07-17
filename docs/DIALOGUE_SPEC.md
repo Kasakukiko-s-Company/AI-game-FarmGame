@@ -93,11 +93,11 @@ thinking
 
 ```json
 {
-  "id": "anna_friend_thanks_01",
-  "speakerId": "npc_anna",
-  "textKey": "dialogue.anna.friend.thanks_01",
+  "id": "shen_he_farm_reacquaintance_01",
+  "speakerId": "npc_shen_he",
+  "textKey": "dialogue.shen_he.farm_reacquaintance_01",
   "portrait": {
-    "characterId": "npc_anna",
+    "characterId": "npc_shen_he",
     "expression": "shy",
     "pose": "hands_together",
     "effect": "blush",
@@ -110,11 +110,11 @@ thinking
 
 ```json
 {
-  "id": "anna_box_warning_02",
-  "speakerId": "npc_anna",
-  "textKey": "dialogue.anna.box_warning_02",
+  "id": "shen_he_tool_warning_02",
+  "speakerId": "npc_shen_he",
+  "textKey": "dialogue.shen_he.tool_warning_02",
   "portrait": {
-    "characterId": "npc_anna",
+    "characterId": "npc_shen_he",
     "expression": "angry",
     "pose": "arms_crossed",
     "effect": "anger_mark",
@@ -127,11 +127,11 @@ thinking
 
 ```json
 {
-  "id": "anna_old_village_03",
-  "speakerId": "npc_anna",
-  "textKey": "dialogue.anna.old_village_03",
+  "id": "shen_he_old_farm_03",
+  "speakerId": "npc_shen_he",
+  "textKey": "dialogue.shen_he.old_farm_03",
   "portrait": {
-    "characterId": "npc_anna",
+    "characterId": "npc_shen_he",
     "expression": "sad",
     "pose": "look_down",
     "effect": "tear",
@@ -144,9 +144,9 @@ thinking
 
 ```json
 {
-  "dialogue.anna.friend.thanks_01": "你今天真的来帮我了……谢谢。",
-  "dialogue.anna.box_warning_02": "我不是说过不要碰那个箱子吗！",
-  "dialogue.anna.old_village_03": "这里以前不是这个样子的。"
+  "dialogue.shen_he.farm_reacquaintance_01": "你还记得这排种子该怎么分吗？",
+  "dialogue.shen_he.tool_warning_02": "那把剪子还没磨好，先别拿它试手。",
+  "dialogue.shen_he.old_farm_03": "你走以后，我换过一次种子的排法。"
 }
 ```
 
@@ -160,6 +160,27 @@ thinking
 4. 立绘表现模块只呈现声明结果，不重新解释正文或关系含义。
 
 例如，同一句问候在普通关系和亲密关系下应是两个稳定对白行，各自拥有自己的 `textKey` 与 `portrait`。这使编剧、美术和测试可以直接审查最终意图，也避免“看到谢谢就自动开心”之类的错误。
+
+### 既有关系记忆与新生关系
+
+第一章 NPC 对主角并非陌生人。对白选择器可以读取角色目录中的 `priorBondId`，用熟悉称呼、旧习惯或共同经历完成“主角重逢、玩家初识”；不得让人物向主角解释双方理应都知道的基础身份。
+
+`priorBondId` 只选择对白语境，不写入当前存档好感，也不自动解锁恋爱。玩家在第一章后的选择、事件与关系变化属于新生关系，必须由独立关系状态和事件标记保存。重构村民不能因为继承旧日关系记忆就被写成必须重复原型感情。
+
+### 亲近表现、告白、恋爱与配偶分支
+
+- 15 名 NPC 都有独立好感状态；对白选择器可以读取好感等级和事件标记，但内容层级不能让某个角色失去好感能力。
+- 允许恋爱的当前无配偶 NPC 可以拥有与年龄相符的亲近表现。主角男性/女性形态与 NPC 性别均不限制资格；成年人的对白可有双向轻微暧昧，未成年人只允许单方面稚嫩好感、崇拜或误解，主角回应必须保持明确边界且不得含性暗示。
+- 罗岑山、陈蕴等“仅非恋爱关系”的老年长辈只能使用友情、信任、关怀、敬重或冲突语境；不得出现暧昧、告白接受、约会、恋爱、求婚或婚姻分支。
+- 亲近表现不是恋爱状态。只有告白事件返回 `accepted` 后才能成为 `dating`；未满 18 岁必须明确拒绝，成年人再按当前好感门槛决定接受或拒绝。
+- 恋爱对象满好感后才开放求婚事件；满好感不自动求婚或结婚。
+- 同一存档可以有多个 `dating` 角色；对白分支必须按人物自身状态读取，不能使用一个全局“正在恋爱”布尔值覆盖所有人。
+- 配偶通过唯一 `spouseCharacterId` 读取。婚后其他恋爱对象的反应由编写好的对白与事件处理，底层对话系统不自行结束或隐藏关系。
+- 宁昭的 Demo 内容是友谊/信任，不得因为旧日亲近自动写成暧昧，但这不关闭其完整产品恋爱资格；沈禾的 Demo 内容可以表达恋爱可能性，但不在 Demo 中告白或确立关系。
+- 乔苓与阿桃成年前可以表达单方面稚嫩好感，但告白行必须明确拒绝。满 18 岁后必须切换到明确标记为成年阶段的新对白；儿童时期内容不得被重释或自动转成恋爱分支。
+- 当前不为未婚 NPC 之间编写恋爱状态或告白分支；NPC 对 NPC 只使用友情、信任、竞争、厌恶等非恋爱语境。
+- 对白数据需要性别相关称谓或语境时，必须显式读取主角形态条件并选择已配置的稳定对白行；不得从主角形态推断 NPC 是否可恋爱，也不得默认主角永远为男性。
+- 关系分支仍只负责选择稳定对白行；立绘表现继续读取行内显式 `PortraitState`，不得从好感或恋爱状态自动猜表情。
 
 ## 角色立绘目录
 

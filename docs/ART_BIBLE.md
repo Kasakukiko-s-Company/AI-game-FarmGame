@@ -88,6 +88,7 @@
 - 游戏场景中的人物继续使用 `96×96` HD 像素 Sprite；进入对话时显示精美 2D 半身或膝上人物立绘。
 - 立绘不是场景 Sprite 的放大版，但两者必须在发型、服装、配饰、年龄、体型、肤色和主配色上保持同一角色设定。
 - 立绘采用清晰线稿、受控色块和轻量明暗，避免依赖复杂实时材质；日常与渗漏状态可以改变色调、服装或情绪差分，但不能无理由改变角色身份特征。
+- 年龄会随长期世界日期增长。未成年角色满 18 岁并进入成年关系内容前，必须准备明确的成年场景 Sprite 与成年立绘版本；不得只把儿童素材放大、换表情或继续用于恋爱场景。
 - 第一版只使用静态立绘差分，不实现 Live2D、复杂骨骼动画、逐句口型同步或每句对白一张全新完整插画。
 - 重要剧情可以制作特殊姿势、服装或剧情状态立绘；这些资源仍必须通过稳定状态 ID 引用，并登记来源。
 
@@ -160,16 +161,16 @@ portrait_{character_id}_{costume}_{pose}_{expression}_{effect}.png
 示例：
 
 ```text
-portrait_npc_anna_default_default_neutral.png
-portrait_npc_anna_default_hands_together_shy_blush.png
-portrait_npc_anna_default_arms_crossed_angry_anger_mark.png
+portrait_npc_shen_he_default_default_neutral.png
+portrait_npc_shen_he_default_hands_together_shy_blush.png
+portrait_npc_shen_he_default_arms_crossed_angry_anger_mark.png
 ```
 
 只有不能安全镜像时才增加方向后缀：
 
 ```text
-portrait_npc_anna_default_default_neutral_left.png
-portrait_npc_anna_default_default_neutral_right.png
+portrait_npc_shen_he_default_default_neutral_left.png
+portrait_npc_shen_he_default_default_neutral_right.png
 ```
 
 `character_id`、`expression`、`pose`、`costume` 和 `effect` 都使用稳定英文 `snake_case`。缺失资源的确定性回退顺序和对话 JSON 契约见 `docs/DIALOGUE_SPEC.md` 与 `docs/DATA_SCHEMA.md`。
@@ -292,14 +293,22 @@ portrait_npc_anna_default_default_neutral_right.png
 示例：
 
 ```text
-player_idle.png
-player_walk.png
-player_hoe.png
-player_water.png
-player_harvest.png
+player_male_idle.png
+player_male_walk.png
+player_male_hoe.png
+player_male_water.png
+player_male_harvest.png
+
+player_female_idle.png
+player_female_walk.png
+player_female_hoe.png
+player_female_water.png
+player_female_harvest.png
 ```
 
-未来若确认砍伐系统，再按相同规范增加 `player_axe.png`。
+男性/女性主角形态共享帧尺寸、动作语义、脚点、碰撞和工具时序，只替换视觉与显式称谓/对白差分。第一批视觉验证包仍只制作当前男性形态；女性形态需在后续独立资源任务中按同一规格制作，本阶段不自动扩大美术范围。
+
+未来若确认砍伐系统，再按相同规范增加 `player_{gender_form}_axe.png`。
 
 ### 地图与作物 Sheet
 
@@ -329,6 +338,8 @@ assets/
   art/
     characters/
       player/
+        male/
+        female/
       npc/
       animals/
     environment/
